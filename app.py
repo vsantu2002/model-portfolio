@@ -41,12 +41,17 @@ def _secret(section, key, default=None):
 
 
 @st.cache_resource
-def get_store():
-    token, repo = _secret("github", "token"), _secret("github", "repo")
+def _make_store(token, repo, path, branch):
+    # Keyed on the secret values, so adding or changing secrets takes effect
+    # on the next page load -- no app reboot needed.
     if token and repo:
-        return GitHubStore(token, repo, _secret("github", "path", "data/portfolio.json"),
-                           _secret("github", "branch", "main"))
+        return GitHubStore(token, repo, path, branch)
     return LocalStore(os.path.join(os.path.dirname(os.path.abspath(__file__)), "data", "portfolio.json"))
+
+
+def get_store():
+    return _make_store(_secret("github", "token"), _secret("github", "repo"),
+                       _secret("github", "path", "data/portfolio.json"), _secret("github", "branch", "main"))
 
 
 @st.cache_data(ttl=60, show_spinner=False)
@@ -108,6 +113,21 @@ def style_line_chart(fig, y_title):
     fig.update_xaxes(showgrid=False)
     fig.update_yaxes(title=y_title, gridcolor=GRID, zeroline=True, zerolinecolor=GRID, ticksuffix="%")
     return fig
+
+
+MARKET_HOURS = {"INR": ("Asia/Kolkata", (9, 15), (15, 30)), "USD": ("America/New_York", (9, 30), (16, 0))}
+
+
+def price_label(px_date: pd.Timestamp, currency: str) -> str:
+    """'close' only once the exchange has actually closed for that day; during
+    trading hours Yahoo's latest bar is the price so far, not a close."""
+    from datetime import datetime, time
+    from zoneinfo import ZoneInfo
+    tz, open_t, close_t = MARKET_HOURS.get(currency, MARKET_HOURS["INR"])
+    now = datetime.now(ZoneInfo(tz))
+    if px_date.date() == now.date() and now.weekday() < 5 and time(*open_t) <= now.time() < time(*close_t):
+        return f"Prices intraday as of {now.strftime('%H:%M')} today (market open; final at close)"
+    return f"Prices as of {px_date.strftime('%d %b %Y')} close"
 
 
 def pnl_color(v):
@@ -225,7 +245,7 @@ if have_lots:
                    + ". Using manual price if set (Manage → Edit lots), otherwise entry price.")
     px_date = closes.index.max() if not closes.empty else None
     if px_date is not None:
-        st.caption(f"Prices as of {pd.Timestamp(px_date).strftime('%d %b %Y')} close · "
+        st.caption(f"{price_label(pd.Timestamp(px_date), cur)} · "
                    f"tracking since {s['since'].strftime('%d %b %Y')}")
 
 tabs = st.tabs(["Overview", "Holdings", "Weekly changes", "Closed trades", "Analytics"]
