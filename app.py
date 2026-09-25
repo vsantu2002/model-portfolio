@@ -105,6 +105,34 @@ def pct(v, signed=True) -> str:
     return f"{v:+.2f}%" if signed else f"{v:.2f}%"
 
 
+KPI_CSS = """<style>
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:4px 0 14px}
+.kpi{border:1px solid rgba(128,128,128,.25);border-radius:10px;padding:10px 14px;min-width:0}
+.kpi-l{font-size:.82rem;opacity:.68;margin-bottom:2px}
+.kpi-v{font-size:clamp(1.15rem,1.9vw,1.65rem);font-weight:600;line-height:1.25;overflow-wrap:anywhere}
+.kpi-s{font-size:.8rem;margin-top:3px;opacity:.8;overflow-wrap:anywhere}
+.kpi-s.pos{color:#2a78d6;opacity:1}.kpi-s.neg{color:#e34948;opacity:1}
+</style>"""
+
+
+def kpis(cards):
+    """cards: list of (label, value, sub, tone, tooltip). A CSS grid that wraps to
+    as many rows as the screen needs, so no value is ever cut off (st.metric
+    truncates long values with '…' on narrower screens)."""
+    import html
+    cells = []
+    for label, value, sub, tone, tip in cards:
+        t = f' title="{html.escape(tip)}"' if tip else ""
+        sub_html = f'<div class="kpi-s {tone or ""}">{html.escape(sub)}</div>' if sub else ""
+        cells.append(f'<div class="kpi"{t}><div class="kpi-l">{html.escape(label)}{" ⓘ" if tip else ""}</div>'
+                     f'<div class="kpi-v">{html.escape(str(value))}</div>{sub_html}</div>')
+    st.markdown(KPI_CSS + '<div class="kpi-grid">' + "".join(cells) + "</div>", unsafe_allow_html=True)
+
+
+def tone(v):
+    return "" if v is None or pd.isna(v) or v == 0 else ("pos" if v > 0 else "neg")
+
+
 def style_line_chart(fig, y_title):
     fig.update_layout(
         margin=dict(l=10, r=10, t=10, b=10), height=380, hovermode="x unified",
@@ -224,19 +252,21 @@ if have_lots:
                           **{t: 1000.0 for t in benchmarks.values()}}.items()))
     tickers = tuple(sorted(set(lots["symbol"]) | set(benchmarks.values())))
     try:
-        closes, missing = get_closes(tickers, start, seed)
+        closes, splits, missing = get_closes(tickers, start, seed)
     except Exception as e:
-        closes, missing = pd.DataFrame(), list(tickers)
+        closes, splits, missing = pd.DataFrame(), pd.DataFrame(), list(tickers)
         st.warning(f"Price download failed ({e}). Showing entry/manual prices until the next refresh.")
     stock_cols = [c for c in closes.columns if c in set(lots["symbol"])]
     bench_cols = {lbl: t for lbl, t in benchmarks.items() if t in closes.columns}
     end = pd.Timestamp.today().normalize()
+    if stock_cols:
+        lots = core.apply_split_basis(lots, closes[stock_cols], splits)
     px = core.price_matrix(lots, closes[stock_cols] if stock_cols else pd.DataFrame(), end)
     last = core.latest_prices(lots, px)
     eq = core.equity_curve(lots, px, capital)
     bench = core.benchmark_curves(closes[list(bench_cols.values())].rename(
         columns={v: k for k, v in bench_cols.items()}) if bench_cols else pd.DataFrame(), eq.index)
-    closed = core.closed_trades(lots)
+    closed = core.closed_trades(lots, last, priced=set(stock_cols) - set(missing))
     hold = core.holdings_table(lots, last, float(eq["equity"].iloc[-1]))
     s = core.stats(eq, closed, bench, capital)
     open_missing = sorted(set(missing) & set(lots.loc[lots["is_open"], "symbol"]))
@@ -256,15 +286,17 @@ with tabs[0]:
     if not have_lots:
         st.info("No positions yet.")
     else:
-        c = st.columns(5)
-        c[0].metric("Portfolio value", money(s["equity"], cur), pct(s["total_return_pct"]))
-        c[1].metric("Total P&L", money(s["total_pnl"], cur),
-                    help=f"Realised {money(s['realised'], cur)} · Unrealised {money(s['unrealised'], cur)}")
-        c[2].metric("CAGR", pct(s["cagr_pct"]) if s["cagr_pct"] is not None else "—",
-                    help="Annualised; shown once the track record is 3+ months long.")
-        c[3].metric("Max drawdown", pct(s["max_dd_pct"]), f"now {pct(s['current_dd_pct'])}", delta_color="off")
-        c[4].metric("Win rate", pct(s.get("win_rate_pct"), signed=False) if s.get("n_closed") else "—",
-                    f"{s.get('n_closed', 0)} closed trades", delta_color="off")
+        kpis([
+            ("Portfolio value", money(s["equity"], cur), f"{pct(s['total_return_pct'])} since start",
+             tone(s["total_return_pct"]), None),
+            ("Total P&L", money(s["total_pnl"], cur),
+             f"Realised {money(s['realised'], cur)} · Open {money(s['unrealised'], cur)}", "", None),
+            ("CAGR", pct(s["cagr_pct"]) if s["cagr_pct"] is not None else "—", "annualised", "",
+             "Compound annual growth since the first entry. Shown once the record is 3+ months long."),
+            ("Max drawdown", pct(s["max_dd_pct"]), f"now {pct(s['current_dd_pct'])}", "", None),
+            ("Win rate", pct(s.get("win_rate_pct"), signed=False) if s.get("n_closed") else "—",
+             f"{s.get('n_closed', 0)} closed trades", "", None),
+        ])
 
         if s["bench"]:
             st.caption("Same period · " + " · ".join(
@@ -294,19 +326,23 @@ with tabs[1]:
     if not have_lots or hold.empty:
         st.info("No open positions.")
     else:
-        c = st.columns(4)
-        c[0].metric("Open positions", f"{len(hold)} / {slots} slots")
-        c[1].metric("Invested", money(hold["cost"].sum(), cur))
-        c[2].metric("Market value", money(hold["value"].sum(), cur))
-        c[3].metric("Unrealised P&L", money(hold["pnl"].sum(), cur),
-                    pct(hold["pnl"].sum() / hold["cost"].sum() * 100))
+        upnl = hold["pnl"].sum()
+        kpis([
+            ("Open positions", f"{len(hold)} / {slots}", "slots used", "", None),
+            ("Invested", money(hold["cost"].sum(), cur), "at cost", "", None),
+            ("Market value", money(hold["value"].sum(), cur), "", "", None),
+            ("Unrealised P&L", money(upnl, cur), pct(upnl / hold["cost"].sum() * 100), tone(upnl), None),
+        ])
+        if hold["split_adj"].any():
+            st.caption("Qty and entry price are on today's share basis for positions that had a split or bonus "
+                       f"since entry ({', '.join(sorted(hold.loc[hold['split_adj'], 'symbol']))}).")
         view = hold[["symbol", "name", "entry_date", "entry_price", "qty", "ltp", "value", "pnl",
                      "pnl_pct", "weight_pct", "days", "comment"]]
         st.dataframe(
             view.style.map(pnl_color, subset=["pnl", "pnl_pct"]),
             hide_index=True, width="stretch", height=min(38 * (len(view) + 1) + 4, 780),
             column_config={
-                "symbol": "Stock", "name": "Name",
+                "symbol": st.column_config.TextColumn("Stock", pinned=True), "name": "Name",
                 "entry_date": st.column_config.DateColumn("Entry", format="DD MMM YY"),
                 "entry_price": st.column_config.NumberColumn("Entry price", format="%.2f"),
                 "qty": st.column_config.NumberColumn("Qty", format="%g"),
@@ -354,22 +390,28 @@ with tabs[3]:
     if not have_lots or closed.empty:
         st.info("No closed trades yet.")
     else:
-        c = st.columns(5)
-        c[0].metric("Closed trades", s["n_closed"])
-        c[1].metric("Win rate", pct(s["win_rate_pct"], signed=False))
-        c[2].metric("Avg win / avg loss", f"{pct(s['avg_win_pct'])} / {pct(s['avg_loss_pct'])}")
-        c[3].metric("Profit factor", f"{s['profit_factor']:.2f}" if s.get("profit_factor") else "—",
-                    help="Total gains ÷ total losses on closed trades.")
-        c[4].metric("Avg days held", f"{s['avg_days_win']:.0f}d win · {s['avg_days_loss']:.0f}d loss"
-                    if s.get("avg_days_win") and s.get("avg_days_loss") else "—")
-        st.caption(f"Best {s['best'][0]} {pct(s['best'][1])} · Worst {s['worst'][0]} {pct(s['worst'][1])} · "
-                   f"Realised P&L {money(closed['pnl'].sum(), cur)}")
+        days = lambda v: f"{v:.0f} days" if v is not None and not pd.isna(v) else "—"
+        post = closed["since_exit_pct"].dropna()
+        kpis([
+            ("Closed trades", s["n_closed"], f"Realised {money(closed['pnl'].sum(), cur)}",
+             tone(closed["pnl"].sum()), None),
+            ("Win rate", pct(s["win_rate_pct"], signed=False), None, "", None),
+            ("Avg win", pct(s["avg_win_pct"]), f"held {days(s.get('avg_days_win'))}", "pos", None),
+            ("Avg loss", pct(s["avg_loss_pct"]), f"held {days(s.get('avg_days_loss'))}", "neg", None),
+            ("Profit factor", f"{s['profit_factor']:.2f}" if s.get("profit_factor") else "—", None, "",
+             "Total gains ÷ total losses on closed trades. Above 1 = the system makes money."),
+            ("After exit (median)", pct(post.median()) if len(post) else "—",
+             f"{(post > 0).sum()} of {len(post)} rose after exit" if len(post) else None, "",
+             "How exited stocks moved from the exit price to today's price. Positive = the stock kept "
+             "rising after we sold; negative = the exit avoided a further fall."),
+        ])
+        st.caption(f"Best {s['best'][0]} {pct(s['best'][1])} · Worst {s['worst'][0]} {pct(s['worst'][1])}")
         view = closed[["symbol", "name", "entry_date", "entry_price", "exit_date", "exit_price", "qty",
-                       "pnl", "pnl_pct", "days", "comment"]]
+                       "pnl", "pnl_pct", "since_exit_pct", "ltp", "days", "comment"]]
         st.dataframe(
-            view.style.map(pnl_color, subset=["pnl", "pnl_pct"]), hide_index=True, width="stretch",
+            view.style.map(pnl_color, subset=["pnl", "pnl_pct", "since_exit_pct"]), hide_index=True, width="stretch",
             column_config={
-                "symbol": "Stock", "name": "Name",
+                "symbol": st.column_config.TextColumn("Stock", pinned=True), "name": "Name",
                 "entry_date": st.column_config.DateColumn("Entry", format="DD MMM YY"),
                 "entry_price": st.column_config.NumberColumn("Entry price", format="%.2f"),
                 "exit_date": st.column_config.DateColumn("Exit", format="DD MMM YY"),
@@ -377,7 +419,14 @@ with tabs[3]:
                 "qty": st.column_config.NumberColumn("Qty", format="%g"),
                 "pnl": st.column_config.NumberColumn("P&L", format="localized"),
                 "pnl_pct": st.column_config.NumberColumn("P&L %", format="%+.2f%%"),
-                "days": st.column_config.NumberColumn("Days", format="%d"), "comment": "Comment"})
+                "days": st.column_config.NumberColumn("Days", format="%d"),
+                "ltp": st.column_config.NumberColumn("Last", format="%.2f",
+                                                     help="Latest price on today's share basis."),
+                "since_exit_pct": st.column_config.NumberColumn(
+                    "Since exit", format="%+.2f%%",
+                    help="Move from the exit price to the latest price, adjusted for any later split or bonus. "
+                         "Positive = kept rising after the exit."),
+                "comment": "Comment"})
 
 # ── Analytics ─────────────────────────────────────────────────────────────
 with tabs[4]:
@@ -385,7 +434,7 @@ with tabs[4]:
         st.info("Nothing to analyse yet.")
     else:
         st.subheader("Monthly returns")
-        mr = core.monthly_returns(eq)
+        mr = core.monthly_returns(eq, capital)
 
         def cell(v):
             if pd.isna(v):
@@ -399,6 +448,10 @@ with tabs[4]:
         colors = mr.apply(lambda col: col.map(cell))
         colors.index = shown.index
         st.dataframe(shown.style.apply(lambda _: colors, axis=None), width="stretch")
+        yrs = eq.index.year
+        st.caption(f"Year = the months compounded (portfolio value at year end ÷ previous year end), not added up. "
+                   f"{yrs.min()} covers {eq.index[0]:%d %b}–31 Dec only, and {yrs.max()} is year to date. "
+                   f"The annualised figure (CAGR since start) is on the Overview.")
 
         st.subheader("P&L contribution by stock")
         con = core.contribution(lots, last)

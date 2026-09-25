@@ -56,6 +56,10 @@ def lots_frame(data: dict, portfolio: str) -> pd.DataFrame:
     df["name"] = df["name"].fillna("")
     df["is_open"] = df["exit_date"].isna()
     df["cost"] = df["entry_price"] * df["qty"]
+    # Calculation basis (see apply_split_basis): identical to the recorded
+    # values unless a split/bonus has to be reconciled.
+    df["e_px"], df["q"], df["x_px"] = df["entry_price"], df["qty"], df["exit_price"]
+    df["split_adj"] = False
     return df
 
 
@@ -83,6 +87,52 @@ def frame_to_lots(df: pd.DataFrame, portfolio: str) -> list[dict]:
     return out
 
 
+# ── splits & bonuses ───────────────────────────────────────────────────────
+def _split_factor(splits: pd.Series | None, when) -> float:
+    """Product of all split ratios strictly after `when` (1.0 if none)."""
+    if splits is None or splits.empty:
+        return 1.0
+    s = splits[(splits.index > when) & (splits > 0)]
+    return float(s.prod()) if len(s) else 1.0
+
+
+def apply_split_basis(lots: pd.DataFrame, closes: pd.DataFrame, splits: pd.DataFrame) -> pd.DataFrame:
+    """Yahoo rewrites a stock's past prices after every split or bonus (a 1:1
+    bonus is a 2:1 split), so its history is always on today's share basis.
+    Recorded lots can be on either basis: entered before the split at the real
+    price of the day, or already adjusted (as the old portal did for positions
+    open at the time of a split). For each lot touched by a later split, compare
+    its entry price with that day's close on both bases and take the closer one.
+    Lots recorded at the real price are converted to today's basis:
+    price / F, quantity x F, where F = product of splits after that date. Cost is
+    unchanged, so P&L stays in real rupees and shares received in a split are
+    counted correctly."""
+    if lots.empty or splits is None or splits.empty:
+        return lots
+    out = lots.copy()
+    cl = closes.copy()
+    cl.index = pd.to_datetime(cl.index).tz_localize(None).normalize()
+    sp = splits.copy()
+    sp.index = pd.to_datetime(sp.index).tz_localize(None).normalize()
+    for i, r in out.iterrows():
+        if r.symbol not in sp.columns or r.symbol not in cl.columns:
+            continue
+        f_in = _split_factor(sp[r.symbol], r.entry_date)
+        if f_in == 1.0:
+            continue
+        adj = cl[r.symbol].dropna().asof(r.entry_date)
+        if adj is None or pd.isna(adj) or adj <= 0 or not r.entry_price:
+            continue
+        real = adj * f_in
+        if abs(math.log(r.entry_price / real)) < abs(math.log(r.entry_price / adj)):
+            out.at[i, "e_px"] = r.entry_price / f_in
+            out.at[i, "q"] = r.qty * f_in
+            if pd.notna(r.exit_date) and pd.notna(r.exit_price):
+                out.at[i, "x_px"] = r.exit_price / _split_factor(sp[r.symbol], r.exit_date)
+            out.at[i, "split_adj"] = True
+    return out
+
+
 # ── prices ─────────────────────────────────────────────────────────────────
 def price_matrix(lots: pd.DataFrame, closes: pd.DataFrame, end: pd.Timestamp) -> pd.DataFrame:
     """Daily close per symbol on a business-day index from first entry to `end`.
@@ -100,7 +150,7 @@ def price_matrix(lots: pd.DataFrame, closes: pd.DataFrame, end: pd.Timestamp) ->
         manual = g["manual_price"].dropna()
         has_data = sym in px.columns and px[sym].notna().any()
         if not has_data:
-            px[sym] = float(g.sort_values("entry_date")["entry_price"].iloc[-1])
+            px[sym] = float(g.sort_values("entry_date")["e_px"].iloc[-1])
         else:
             px[sym] = px[sym].bfill()
         if len(manual):
@@ -120,11 +170,11 @@ def equity_curve(lots: pd.DataFrame, px: pd.DataFrame, capital: float) -> pd.Dat
     invested = pd.Series(0.0, index=idx)
     for r in lots.itertuples():
         held = (idx >= r.entry_date) & ((idx < r.exit_date) if pd.notna(r.exit_date) else True)
-        mtm = (px[r.symbol] - r.entry_price) * r.qty
+        mtm = (px[r.symbol] - r.e_px) * r.q
         unreal += np.where(held, mtm, 0.0)
-        invested += np.where(held, r.entry_price * r.qty, 0.0)
+        invested += np.where(held, r.e_px * r.q, 0.0)
         if pd.notna(r.exit_date):
-            pnl = (r.exit_price - r.entry_price) * r.qty - (r.commission or 0.0)
+            pnl = (r.x_px - r.e_px) * r.q - (r.commission or 0.0)
             realised += np.where(idx >= r.exit_date, pnl, 0.0)
     eq = capital + realised + unreal
     out = pd.DataFrame({"equity": eq, "realised": realised, "unrealised": unreal, "invested": invested})
@@ -152,6 +202,7 @@ def holdings_table(lots: pd.DataFrame, last: dict, equity_now: float) -> pd.Data
         return op
     today = pd.Timestamp.today().normalize()
     op["ltp"] = op["symbol"].map(last)
+    op["entry_price"], op["qty"] = op["e_px"], op["q"]   # today's share basis
     op["value"] = op["ltp"] * op["qty"]
     op["pnl"] = op["value"] - op["cost"]
     op["pnl_pct"] = op["pnl"] / op["cost"] * 100
@@ -160,13 +211,19 @@ def holdings_table(lots: pd.DataFrame, last: dict, equity_now: float) -> pd.Data
     return op.sort_values("value", ascending=False)
 
 
-def closed_trades(lots: pd.DataFrame) -> pd.DataFrame:
+def closed_trades(lots: pd.DataFrame, last: dict | None = None, priced: set | None = None) -> pd.DataFrame:
+    """Recorded entry/exit shown as entered; P&L on the split-reconciled basis.
+    ltp / since_exit_pct: what the stock did after the exit (both on today's
+    share basis, so a later split doesn't read as a crash)."""
     cl = lots[~lots["is_open"]].copy()
     if cl.empty:
         return cl
-    cl["pnl"] = (cl["exit_price"] - cl["entry_price"]) * cl["qty"] - cl["commission"]
+    cl["pnl"] = (cl["x_px"] - cl["e_px"]) * cl["q"] - cl["commission"]
     cl["pnl_pct"] = cl["pnl"] / cl["cost"] * 100
     cl["days"] = (cl["exit_date"] - cl["entry_date"]).dt.days
+    last, priced = last or {}, priced if priced is not None else set(last or {})
+    cl["ltp"] = [last.get(sym) if sym in priced else np.nan for sym in cl["symbol"]]
+    cl["since_exit_pct"] = (cl["ltp"] / cl["x_px"] - 1) * 100
     return cl.sort_values("exit_date", ascending=False)
 
 
@@ -179,7 +236,7 @@ def weekly_changes(lots: pd.DataFrame) -> pd.DataFrame:
         if pd.notna(r.exit_date):
             ev.append({"date": r.exit_date, "action": "Exit", "symbol": r.symbol, "name": r.name,
                        "price": r.exit_price, "qty": r.qty,
-                       "pnl_pct": (r.exit_price / r.entry_price - 1) * 100, "comment": r.comment})
+                       "pnl_pct": (r.x_px / r.e_px - 1) * 100, "comment": r.comment})
     df = pd.DataFrame(ev)
     if df.empty:
         return df
@@ -190,8 +247,8 @@ def weekly_changes(lots: pd.DataFrame) -> pd.DataFrame:
 def contribution(lots: pd.DataFrame, last: dict) -> pd.DataFrame:
     df = lots.copy()
     mark = df["symbol"].map(last)
-    df["pnl"] = np.where(df["is_open"], (mark - df["entry_price"]) * df["qty"],
-                         (df["exit_price"] - df["entry_price"]) * df["qty"] - df["commission"])
+    df["pnl"] = np.where(df["is_open"], (mark - df["e_px"]) * df["q"],
+                         (df["x_px"] - df["e_px"]) * df["q"] - df["commission"])
     g = df.groupby("symbol").agg(name=("name", "last"), pnl=("pnl", "sum"), lots=("id", "count"),
                                  open=("is_open", "any"))
     return g.sort_values("pnl", ascending=False)
@@ -229,17 +286,21 @@ def stats(eq: pd.DataFrame, closed: pd.DataFrame, bench: pd.DataFrame, capital: 
     return s
 
 
-def monthly_returns(eq: pd.DataFrame) -> pd.DataFrame:
+def monthly_returns(eq: pd.DataFrame, capital: float) -> pd.DataFrame:
+    """Month-on-month change in portfolio value. The first month starts from
+    the starting capital, and "Year" compounds the months (year-end value /
+    previous year-end value), so the months chain exactly to the Overview's
+    total return."""
     m = eq["equity"].resample("ME").last()
     prev = m.shift(1)
-    prev.iloc[0] = eq["equity"].iloc[0]
+    prev.iloc[0] = capital
     r = (m / prev - 1) * 100
     t = pd.DataFrame({"year": r.index.year, "month": r.index.strftime("%b"), "ret": r.values})
     order = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
     piv = t.pivot(index="year", columns="month", values="ret").reindex(columns=order)
     yearly = eq["equity"].resample("YE").last()
     ystart = yearly.shift(1)
-    ystart.iloc[0] = eq["equity"].iloc[0]
+    ystart.iloc[0] = capital
     piv["Year"] = ((yearly / ystart - 1) * 100).values
     return piv
 
