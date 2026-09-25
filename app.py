@@ -602,7 +602,24 @@ if editing:
                     st.warning("Those are already in the plan.")
 
             if not items:
-                st.info("No plan yet.")
+                st.info("No plan yet. Reviewed and holding everything? Post a 'No changes' update instead.")
+                with st.expander("⏸️ No changes this review", expanded=False):
+                    if not tg_ready:
+                        tg_hint()
+                    else:
+                        nc_note = st.text_input("Note (optional)", key="nochange_note",
+                                                placeholder="e.g. All holdings still in trend")
+                        held = [(r.symbol, r.pnl_pct) for r in hold.sort_values("pnl_pct", ascending=False).itertuples()] \
+                            if have_lots and not hold.empty else []
+                        msg = notify.no_change_message(name, held, s if have_lots else {}, nc_note.strip() or None,
+                                                       cfg.get("app_url"))
+                        preview(msg)
+                        if cfg.get("last_no_change"):
+                            st.caption(f"Last 'no changes' post: {cfg['last_no_change']}")
+                        if st.button("Post 'No changes'", type="primary") and tg_send(msg):
+                            cfg["last_no_change"] = now_stamp()
+                            if save_data(data, version, f"{name}: no-changes update posted"):
+                                st.rerun()
             else:
                 tbl = pd.DataFrame([{"Action": "Exit" if i["action"] == "exit" else "Enter",
                                      "Stock": i["symbol"], "Ref price": i.get("ref_price") or last.get(i["symbol"]),

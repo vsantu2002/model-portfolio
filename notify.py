@@ -165,3 +165,22 @@ def executed_message(name: str, ex: dict, holdings: list[tuple], stats: dict, ap
     if app_url:
         lines.append(f'<a href="{e(app_url, quote=True)}">View portfolio</a>')
     return "\n".join(lines)
+
+
+def no_change_message(name: str, holdings: list[tuple], stats: dict, note: str | None = None,
+                      app_url: str | None = None) -> str:
+    """Review done, nothing to change: say so, with the current portfolio."""
+    e = html.escape
+    lines = [f"<b>⏸️ {e(name)} — no changes this review</b>"]
+    if note:
+        lines += ["", e(note)]
+    lines += ["", f"<b>Holding ({len(holdings)})</b>",
+              ", ".join(f"{_s(sym)} {_pct(p)}" for sym, p in holdings) or "none"]
+    summary = f"Portfolio {_pct(stats.get('total_return_pct'))} since start"
+    bench = stats.get("bench") or {}
+    if bench:
+        summary += " · " + " · ".join(f"{e(k)} {_pct(v)}" for k, v in list(bench.items())[:2])
+    lines += ["", summary]
+    if app_url:
+        lines.append(f'<a href="{e(app_url, quote=True)}">View portfolio</a>')
+    return "\n".join(lines)
