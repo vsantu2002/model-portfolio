@@ -16,6 +16,7 @@ import plotly.graph_objects as go
 import streamlit as st
 
 import core
+import notify
 import prices
 from storage import ConflictError, GitHubStore, LocalStore
 
@@ -502,7 +503,8 @@ with tabs[4]:
 if editing:
     with tabs[5]:
         equity_now = float(eq["equity"].iloc[-1]) if have_lots else capital
-        m1, m2, m3, m4, m5 = st.tabs(["Add entry", "Close position", "Edit lots", "Settings", "New portfolio"])
+        m1, m2, m3, m6, m4, m5 = st.tabs(["Add entry", "Close position", "Edit lots", "Publish", "Settings",
+                                          "New portfolio"])
 
         with m1:
             c = st.columns([2, 3, 2])
@@ -618,6 +620,76 @@ if editing:
                     if save_data(data, version, f"{cfg['name']}: settings"):
                         _cached_closes.clear()
                         st.rerun()
+
+        with m6:
+            tg_token = _secret("telegram", "bot_token")
+            if not tg_token:
+                st.info("To post weekly changes to Telegram, add this to the app's Secrets (share.streamlit.io → "
+                        "⋮ → Settings → Secrets), then reload:\n\n"
+                        "```\n[telegram]\nbot_token = \"PASTE-BOT-TOKEN\"\n```")
+            else:
+                chat_id = cfg.get("telegram_chat_id")
+                with st.expander("Telegram group and link" + (f" — {cfg.get('telegram_chat_title', chat_id)}"
+                                                              if chat_id else " — not set up yet"),
+                                 expanded=not chat_id):
+                    st.caption("Detect lists the groups the bot has seen. If yours isn't listed, send "
+                               "`/start` in the group (or any message that @mentions the bot), then detect again.")
+                    if st.button("Detect group"):
+                        try:
+                            st.session_state["tg_chats"] = notify.recent_group_chats(tg_token)
+                        except Exception as e:
+                            st.error(f"Telegram: {e}")
+                    found = st.session_state.get("tg_chats")
+                    if found == []:
+                        st.warning("No groups found yet. Send /start in the group, wait a few seconds, detect again.")
+                    elif found:
+                        opts = {c["id"]: c["title"] for c in found}
+                        gid = st.selectbox("Group", list(opts), format_func=opts.get)
+                        if st.button("Use this group", type="primary"):
+                            cfg.update(telegram_chat_id=gid, telegram_chat_title=opts[gid])
+                            if save_data(data, version, f"{cfg.get('name', pid)}: telegram group"):
+                                st.session_state.pop("tg_chats", None)
+                                st.rerun()
+                    url = st.text_input("App link to include in messages", value=cfg.get("app_url") or "",
+                                        placeholder="https://your-app.streamlit.app")
+                    if st.button("Save link") and url.strip() != (cfg.get("app_url") or ""):
+                        cfg["app_url"] = url.strip() or None
+                        if save_data(data, version, f"{cfg.get('name', pid)}: app link"):
+                            st.rerun()
+
+                if chat_id and have_lots and not ch.empty:
+                    weeks = list(dict.fromkeys(ch["week"]))
+                    wk = st.selectbox("Week to publish", weeks, format_func=lambda w: f"Week of {w:%d %b %Y}")
+                    note = st.text_input("Optional note (e.g. market view, reason for a change)")
+                    msg = notify.week_message(cfg.get("name", pid), wk, ch[ch["week"] == wk], s,
+                                              cfg.get("app_url"), note.strip() or None)
+                    st.markdown("**Preview**")
+                    with st.container(border=True):
+                        st.markdown(notify.preview_markdown(msg))
+                    sent = (cfg.get("published_weeks") or {}).get(wk.strftime("%Y-%m-%d"))
+                    again = True
+                    if sent:
+                        st.warning(f"This week was already posted on {sent}.")
+                        again = st.checkbox("Post it again anyway")
+                    c1, c2 = st.columns([1, 3])
+                    if c1.button("Send to Telegram", type="primary", disabled=not again):
+                        try:
+                            notify.send_message(tg_token, chat_id, msg)
+                        except Exception as e:
+                            st.error(f"Telegram didn't accept the message: {e}")
+                        else:
+                            stamp = pd.Timestamp.now(tz="Asia/Kolkata").strftime("%d %b %Y %H:%M")
+                            cfg.setdefault("published_weeks", {})[wk.strftime("%Y-%m-%d")] = stamp
+                            if save_data(data, version, f"{cfg.get('name', pid)}: published week of {wk:%d %b}"):
+                                st.rerun()
+                            else:
+                                st.warning("Posted to Telegram, but recording it as sent failed.")
+                    if c2.button("Send a test message"):
+                        try:
+                            notify.send_message(tg_token, chat_id, f"Test from {cfg.get('name', pid)} tracker ✅")
+                            st.success("Test sent — check the group.")
+                        except Exception as e:
+                            st.error(f"Telegram: {e}")
 
         with m5:
             st.caption("For a second model portfolio (e.g. the US one). Each portfolio has its own settings and lots.")
