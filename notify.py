@@ -89,3 +89,79 @@ def preview_markdown(msg: str) -> str:
     md = re.sub(r'<a href="(.*?)">(.*?)</a>', r"[\2](\1)", md)
     md = html.unescape(md).replace("$", "\\$")
     return "  \n".join(md.split("\n"))
+
+
+# ── plan / execution messages ─────────────────────────────────────────────
+def _s(sym) -> str:
+    return html.escape(str(sym).split(".")[0])
+
+
+def plan_message(name: str, items: list[dict], note: str | None = None, app_url: str | None = None) -> str:
+    """Evening message: the full plan for the next session."""
+    e = html.escape
+    exits = [i for i in items if i["action"] == "exit"]
+    entries = [i for i in items if i["action"] == "entry"]
+    lines = [f"<b>📋 {e(name)} — plan for next session</b>"]
+    if note:
+        lines += ["", e(note)]
+    lines += ["", f"<b>Exit ({len(exits)})</b>"]
+    lines += [f"• {_s(i['symbol'])}" + (f" — {e(i['note'])}" if i.get("note") else "") for i in exits] or ["• none"]
+    lines += ["", f"<b>Enter ({len(entries)})</b>"]
+    lines += [f"• {_s(i['symbol'])}" + (f" (ref {_price(i['ref_price'])})" if i.get("ref_price") else "")
+              + (f" — {e(i['note'])}" if i.get("note") else "") for i in entries] or ["• none"]
+    if app_url:
+        lines += ["", f'<a href="{e(app_url, quote=True)}">View portfolio</a>']
+    return "\n".join(lines)
+
+
+def plan_diff(published: list[dict], items: list[dict]) -> tuple[list[dict], list[dict]]:
+    """(added, removed) between the last published plan and the current one,
+    compared by (action, symbol)."""
+    key = lambda i: (i["action"], i["symbol"])
+    old, new = {key(i): i for i in published}, {key(i): i for i in items}
+    return [new[k] for k in new if k not in old], [old[k] for k in old if k not in new]
+
+
+def plan_update_message(name: str, added: list[dict], removed: list[dict], items: list[dict],
+                        note: str | None = None) -> str:
+    e = html.escape
+    verb = lambda i: "exit" if i["action"] == "exit" else "enter"
+    lines = [f"<b>🔁 {e(name)} — plan update</b>"]
+    if note:
+        lines += ["", e(note)]
+    lines += [""]
+    lines += [f"➕ {verb(i)} {_s(i['symbol'])}" + (f" — {e(i['note'])}" if i.get("note") else "") for i in added]
+    lines += [f"➖ no longer {'exiting' if i['action'] == 'exit' else 'entering'} {_s(i['symbol'])}" for i in removed]
+    ex = ", ".join(_s(i["symbol"]) for i in items if i["action"] == "exit") or "none"
+    en = ", ".join(_s(i["symbol"]) for i in items if i["action"] == "entry") or "none"
+    lines += ["", f"<b>Plan now</b> — exit: {ex} · enter: {en}"]
+    return "\n".join(lines)
+
+
+def executed_message(name: str, ex: dict, holdings: list[tuple], stats: dict, app_url: str | None = None) -> str:
+    """Morning message. ex = the execution record saved by the app; holdings =
+    [(symbol, pnl_pct)] of all open positions after execution."""
+    e = html.escape
+    d = pd.Timestamp(ex["date"])
+    lines = [f"<b>✅ {e(name)} — executed {d:%d %b %Y}</b>"]
+    if ex.get("exits"):
+        lines += ["", f"<b>Exited ({len(ex['exits'])})</b>"]
+        lines += [f"• {_s(x['symbol'])} @ {_price(x['price'])}" + (f" × {x['qty']:g}" if x.get("qty") else "")
+                  + f"  ({_pct(x.get('pnl_pct'))})" for x in ex["exits"]]
+    if ex.get("entries"):
+        lines += ["", f"<b>Entered ({len(ex['entries'])})</b>"]
+        lines += [f"• {_s(x['symbol'])} @ {_price(x['price'])} × {x['qty']:g}" for x in ex["entries"]]
+    if ex.get("replaced"):
+        lines += ["", "<b>Changed from plan</b>"]
+        lines += [f"• {_s(r['from'])} → {_s(r['to'])}" + (f" — {e(r['reason'])}" if r.get("reason") else "")
+                  for r in ex["replaced"]]
+    if ex.get("skipped"):
+        lines += ["", "<b>Not done (carried to next plan)</b>"]
+        lines += [f"• {'exit' if k['action'] == 'exit' else 'enter'} {_s(k['symbol'])}"
+                  + (f" — {e(k['reason'])}" if k.get("reason") else "") for k in ex["skipped"]]
+    lines += ["", f"<b>Portfolio now ({len(holdings)})</b>"]
+    lines += [", ".join(f"{_s(sym)} {_pct(p)}" for sym, p in holdings) or "none"]
+    lines += ["", f"Portfolio {_pct(stats.get('total_return_pct'))} since start"]
+    if app_url:
+        lines.append(f'<a href="{e(app_url, quote=True)}">View portfolio</a>')
+    return "\n".join(lines)

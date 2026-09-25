@@ -92,6 +92,17 @@ def get_closes(tickers: tuple, start: str, seed: tuple):
     return res
 
 
+@st.cache_data(ttl=3600, show_spinner=False)
+def last_price(sym: str):
+    """Latest close for one symbol (reference price when planning an entry)."""
+    try:
+        cl, _, _ = prices.fetch_closes([sym], (pd.Timestamp.today() - pd.Timedelta(days=15)).strftime("%Y-%m-%d"))
+        v = cl[sym].dropna()
+        return round(float(v.iloc[-1]), 2) if len(v) else None
+    except Exception:
+        return None
+
+
 # ── formatting ────────────────────────────────────────────────────────────
 def _indian(n: float) -> str:
     s = f"{abs(n):,.0f}".replace(",", "")
@@ -299,6 +310,11 @@ with tabs[0]:
     if not have_lots:
         st.info("No positions yet.")
     else:
+        _pl = (cfg.get("plan") or {}).get("items") or []
+        if _pl:
+            _x = ", ".join(i["symbol"].split(".")[0] for i in _pl if i["action"] == "exit") or "none"
+            _e = ", ".join(i["symbol"].split(".")[0] for i in _pl if i["action"] == "entry") or "none"
+            st.info(f"📋 **Plan for next session** — exit: {_x} · enter: {_e}")
         kpis([
             ("Portfolio value", money(s["equity"], cur), f"{pct(s['total_return_pct'])} since start",
              tone(s["total_return_pct"]), None),
@@ -349,13 +365,15 @@ with tabs[1]:
         if hold["split_adj"].any():
             st.caption("Qty and entry price are on today's share basis for positions that had a split or bonus "
                        f"since entry ({', '.join(sorted(hold.loc[hold['split_adj'], 'symbol']))}).")
-        view = hold[["symbol", "name", "entry_date", "entry_price", "qty", "ltp", "value", "pnl",
+        _px = {i.get("lot_id") for i in ((cfg.get("plan") or {}).get("items") or []) if i["action"] == "exit"}
+        hold = hold.assign(plan=["Exit planned" if i in _px else "" for i in hold["id"]])
+        view = hold[["symbol", "plan", "name", "entry_date", "entry_price", "qty", "ltp", "value", "pnl",
                      "pnl_pct", "weight_pct", "days", "comment"]]
         st.dataframe(
             view.style.map(pnl_color, subset=["pnl", "pnl_pct"]),
             hide_index=True, width="stretch", height=min(38 * (len(view) + 1) + 4, 780),
             column_config={
-                "symbol": st.column_config.TextColumn("Stock", pinned=True), "name": "Name",
+                "symbol": st.column_config.TextColumn("Stock", pinned=True), "plan": "Plan", "name": "Name",
                 "entry_date": st.column_config.DateColumn("Entry", format="DD MMM YY"),
                 "entry_price": st.column_config.NumberColumn("Entry price", format="%.2f"),
                 "qty": st.column_config.NumberColumn("Qty", format="%g"),
@@ -503,8 +521,247 @@ with tabs[4]:
 if editing:
     with tabs[5]:
         equity_now = float(eq["equity"].iloc[-1]) if have_lots else capital
-        m1, m2, m3, m6, m4, m5 = st.tabs(["Add entry", "Close position", "Edit lots", "Publish", "Settings",
-                                          "New portfolio"])
+        tg_token = _secret("telegram", "bot_token")
+        chat_id = cfg.get("telegram_chat_id")
+        tg_ready = bool(tg_token and chat_id)
+        name = cfg.get("name", pid)
+
+        def tg_send(text: str) -> bool:
+            try:
+                notify.send_message(tg_token, chat_id, text)
+                return True
+            except Exception as e:
+                st.error(f"Telegram didn't accept the message: {e}")
+                return False
+
+        def preview(msg: str):
+            st.markdown("**Preview**")
+            with st.container(border=True):
+                st.markdown(notify.preview_markdown(msg))
+
+        def now_stamp() -> str:
+            return pd.Timestamp.now(tz="Asia/Kolkata").strftime("%d %b %Y %H:%M")
+
+        def tg_hint():
+            st.info("Telegram isn't set up yet: " + ("add the bot token to Secrets, then " if not tg_token else "")
+                    + "connect the group under Manage → Settings.")
+
+        plan = cfg.get("plan") or {"items": [], "published": None, "published_at": None}
+        items = plan["items"]
+
+        def save_plan(msg: str):
+            cfg["plan"] = plan if (plan["items"] or plan.get("published")) else None
+            if save_data(data, version, f"{name}: {msg}"):
+                st.rerun()
+
+        mp, mx, m1, m2, m3, m6, m4, m5 = st.tabs(["Plan", "Execute", "Add entry", "Close position", "Edit lots",
+                                                  "Weekly summary", "Settings", "New portfolio"])
+
+        # ── Plan (evening) ──
+        with mp:
+            st.caption("Evening: list tomorrow's exits and entries and publish them to the group. Changing the "
+                       "plan after publishing? Publish again and only the changes are sent.")
+            open_lots = lots[lots["is_open"]].sort_values("symbol") if have_lots else pd.DataFrame()
+            planned_exit_ids = {i.get("lot_id") for i in items if i["action"] == "exit"}
+            exit_opts = {r.id: f"{r.symbol} — {r.q:g} sh" for r in open_lots.itertuples()
+                         if r.id not in planned_exit_ids} if not open_lots.empty else {}
+            c = st.columns([3, 3, 1.2], vertical_alignment="bottom")
+            lid = c[0].selectbox("Exit", list(exit_opts), format_func=exit_opts.get, index=None,
+                                 placeholder="Pick a holding")
+            why_x = c[1].text_input("Reason (optional)", key="plan_exit_note")
+            if c[2].button("Add exit", disabled=lid is None, width="stretch"):
+                lot = open_lots[open_lots["id"] == lid].iloc[0]
+                items.append({"id": core.new_lot_id(), "action": "exit", "symbol": lot["symbol"],
+                              "name": lot["name"], "lot_id": lid, "note": why_x.strip() or None, "ref_price": None})
+                save_plan(f"plan exit {lot['symbol']}")
+            c = st.columns([3, 3, 1.2], vertical_alignment="bottom")
+            sym_e = c[0].text_input("Enter", key="plan_entry_sym", placeholder="HFCL or 543210.BO").strip().upper()
+            why_e = c[1].text_input("Reason (optional)", key="plan_entry_note")
+            if c[2].button("Add entry", disabled=not sym_e, width="stretch"):
+                if cur == "INR" and "." not in sym_e:
+                    sym_e += ".NS"
+                if any(i["action"] == "entry" and i["symbol"] == sym_e for i in items):
+                    st.warning(f"{sym_e} is already in the plan.")
+                else:
+                    items.append({"id": core.new_lot_id(), "action": "entry", "symbol": sym_e,
+                                  "name": sym_e.split(".")[0], "lot_id": None, "note": why_e.strip() or None,
+                                  "ref_price": last_price(sym_e)})
+                    save_plan(f"plan entry {sym_e}")
+
+            if not items:
+                st.info("No plan yet.")
+            else:
+                tbl = pd.DataFrame([{"Action": "Exit" if i["action"] == "exit" else "Enter",
+                                     "Stock": i["symbol"], "Ref price": i.get("ref_price") or last.get(i["symbol"]),
+                                     "Reason": i.get("note") or ""} for i in items])
+                st.dataframe(tbl, hide_index=True, width="stretch",
+                             column_config={"Ref price": st.column_config.NumberColumn(format="%.2f")})
+                labels = {i["id"]: f"{'Exit' if i['action'] == 'exit' else 'Enter'} {i['symbol']}" for i in items}
+                c = st.columns([4, 1.2, 1.2], vertical_alignment="bottom")
+                drop = c[0].multiselect("Remove from plan", list(labels), format_func=labels.get)
+                if c[1].button("Remove", disabled=not drop, width="stretch"):
+                    plan["items"] = [i for i in items if i["id"] not in drop]
+                    save_plan("plan remove " + ", ".join(labels[d] for d in drop))
+                if c[2].button("Clear plan", width="stretch"):
+                    plan.update(items=[], published=None, published_at=None)
+                    save_plan("plan cleared")
+
+                st.divider()
+                if not tg_ready:
+                    tg_hint()
+                else:
+                    note = st.text_input("Note for the group (optional)", key="plan_note")
+                    if plan.get("published") is None:
+                        msg = notify.plan_message(name, items, note.strip() or None, cfg.get("app_url"))
+                        preview(msg)
+                        if st.button("Publish plan", type="primary") and tg_send(msg):
+                            plan.update(published=[dict(i) for i in items], published_at=now_stamp())
+                            save_plan("plan published")
+                    else:
+                        added, removed = notify.plan_diff(plan["published"], items)
+                        if not added and not removed:
+                            st.success(f"Published {plan['published_at']} — no changes since.")
+                        else:
+                            msg = notify.plan_update_message(name, added, removed, items, note.strip() or None)
+                            preview(msg)
+                            if st.button("Publish update", type="primary") and tg_send(msg):
+                                plan.update(published=[dict(i) for i in items], published_at=now_stamp())
+                                save_plan("plan update published")
+
+        # ── Execute (morning) ──
+        with mx:
+            ex_last = cfg.get("last_execution")
+            if not items:
+                st.info("No plan to execute. Add it under Plan first.")
+            else:
+                st.caption("Morning: enter the actual fill prices and confirm. Couldn't buy a stock (e.g. upper "
+                           "circuit)? Type the replacement symbol in its row, its fill price and a reason. Untick anything not "
+                           "done — it stays in the plan. Leave Qty blank for equal weight.")
+                d_exec = st.date_input("Execution date", value=date.today(), key="exec_date")
+                rows = pd.DataFrame([{
+                    "id": i["id"], "Action": "Exit" if i["action"] == "exit" else "Enter",
+                    "Stock": i["symbol"], "Done": True,
+                    "Fill price": round(float(last.get(i["symbol"]) or i.get("ref_price") or 0) or 0, 2) or None,
+                    "Qty": None, "Reason": ""} for i in items])
+                ed = st.data_editor(
+                    rows, hide_index=True, width="stretch", key="exec_editor",
+                    disabled=["Action"],
+                    column_config={"id": None,
+                                   "Stock": st.column_config.TextColumn(help="Change an entry's symbol to buy a "
+                                                                             "replacement instead."),
+                                   "Done": st.column_config.CheckboxColumn(help="Untick if it couldn't be done."),
+                                   "Fill price": st.column_config.NumberColumn(format="%.2f", min_value=0.0),
+                                   "Qty": st.column_config.NumberColumn(help="Blank = equal weight (entries) or "
+                                                                             "the full position (exits)."),
+                                   "Reason": st.column_config.TextColumn(help="Why it changed or wasn't done.")})
+                if st.button("Confirm execution", type="primary"):
+                    by_id = {i["id"]: i for i in items}
+                    errors = []
+                    recs = ed.to_dict("records")
+                    num = lambda v: float(v) if v is not None and not pd.isna(v) else 0.0
+                    txt = lambda v: str(v).strip() if v is not None and not pd.isna(v) else ""
+                    for r in recs:
+                        it = by_id[r["id"]]
+                        if r["Done"] and num(r["Fill price"]) <= 0:
+                            errors.append(f"{r['Stock']}: fill price missing")
+                        if it["action"] == "exit" and txt(r["Stock"]).upper() != it["symbol"]:
+                            errors.append(f"{it['symbol']}: an exit's symbol can't be changed")
+                    if errors:
+                        st.error("; ".join(errors))
+                    else:
+                        lots_by_id = {l["id"]: l for l in data["lots"]}
+                        basis = lots.set_index("id") if have_lots else pd.DataFrame()
+                        rec = {"date": d_exec.isoformat(), "exits": [], "entries": [], "replaced": [],
+                               "skipped": [], "sent_at": None}
+                        keep = []
+                        eq_now = equity_now
+                        for r in recs:
+                            it, fill = by_id[r["id"]], num(r["Fill price"])
+                            reason = txt(r["Reason"]) or None
+                            if not r["Done"]:
+                                keep.append(it)
+                                rec["skipped"].append({"action": it["action"], "symbol": it["symbol"], "reason": reason})
+                                continue
+                            if it["action"] == "exit":
+                                l = lots_by_id.get(it["lot_id"])
+                                if not l or l.get("exit_date"):
+                                    continue
+                                q_out = num(r["Qty"])
+                                sold = float(l["qty"])
+                                if 0 < q_out < float(l["qty"]) - 1e-9:   # partial exit: split the lot
+                                    sold = q_out
+                                    data["lots"].append(dict(l, id=core.new_lot_id(), qty=q_out,
+                                                             exit_date=d_exec.isoformat(), exit_price=fill))
+                                    l["qty"] = float(l["qty"]) - q_out
+                                    keep.append(dict(it))            # rest stays planned
+                                else:
+                                    l.update(exit_date=d_exec.isoformat(), exit_price=fill)
+                                e_px = float(basis.loc[it["lot_id"], "e_px"]) if it["lot_id"] in basis.index else l["entry_price"]
+                                rec["exits"].append({"symbol": it["symbol"], "price": fill,
+                                                     "qty": sold,
+                                                     "pnl_pct": (fill / e_px - 1) * 100 if e_px else None})
+                            else:
+                                sym_x = txt(r["Stock"]).upper()
+                                if cur == "INR" and "." not in sym_x:
+                                    sym_x += ".NS"
+                                qty = num(r["Qty"]) or core.equal_weight_qty(eq_now, slots, fill)
+                                data["lots"].append({"id": core.new_lot_id(), "portfolio": pid, "symbol": sym_x,
+                                                     "name": sym_x.split(".")[0], "entry_date": d_exec.isoformat(),
+                                                     "entry_price": fill, "qty": qty, "exit_date": None,
+                                                     "exit_price": None, "commission": 0.0, "manual_price": None,
+                                                     "comment": reason})
+                                rec["entries"].append({"symbol": sym_x, "price": fill, "qty": qty})
+                                if sym_x != it["symbol"]:
+                                    rec["replaced"].append({"from": it["symbol"], "to": sym_x, "reason": reason})
+                        plan["items"] = keep
+                        if not keep:
+                            plan.update(published=None, published_at=None)
+                        cfg["plan"] = plan if keep else None
+                        cfg["last_execution"] = rec
+                        if save_data(data, version, f"{name}: executed {d_exec:%d %b} "
+                                     f"({len(rec['exits'])} exits, {len(rec['entries'])} entries)"):
+                            st.rerun()
+
+            if ex_last:
+                st.divider()
+                st.markdown(f"**Last execution — {pd.Timestamp(ex_last['date']):%d %b %Y}**")
+                if not tg_ready:
+                    tg_hint()
+                else:
+                    held = [(r.symbol, r.pnl_pct) for r in hold.sort_values("pnl_pct", ascending=False).itertuples()] \
+                        if have_lots and not hold.empty else []
+                    msg = notify.executed_message(name, ex_last, held, s if have_lots else {}, cfg.get("app_url"))
+                    preview(msg)
+                    again = True
+                    if ex_last.get("sent_at"):
+                        st.caption(f"Sent {ex_last['sent_at']}.")
+                        again = st.checkbox("Send it again", key="exec_again")
+                    if st.button("Send executed message", type="primary", disabled=not again) and tg_send(msg):
+                        ex_last["sent_at"] = now_stamp()
+                        if save_data(data, version, f"{name}: executed message sent"):
+                            st.rerun()
+
+        # ── Weekly summary ──
+        with m6:
+            if not tg_ready:
+                tg_hint()
+            elif have_lots and not ch.empty:
+                st.caption("Optional recap of a whole week's changes.")
+                weeks = list(dict.fromkeys(ch["week"]))
+                wk = st.selectbox("Week", weeks, format_func=lambda w: f"Week of {w:%d %b %Y}")
+                note = st.text_input("Optional note", key="week_note")
+                msg = notify.week_message(name, wk, ch[ch["week"] == wk], s, cfg.get("app_url"),
+                                          note.strip() or None)
+                preview(msg)
+                sent = (cfg.get("published_weeks") or {}).get(wk.strftime("%Y-%m-%d"))
+                again = True
+                if sent:
+                    st.warning(f"This week was already posted on {sent}.")
+                    again = st.checkbox("Post it again anyway")
+                if st.button("Send weekly summary", type="primary", disabled=not again) and tg_send(msg):
+                    cfg.setdefault("published_weeks", {})[wk.strftime("%Y-%m-%d")] = now_stamp()
+                    if save_data(data, version, f"{name}: published week of {wk:%d %b}"):
+                        st.rerun()
 
         with m1:
             c = st.columns([2, 3, 2])
@@ -621,75 +878,40 @@ if editing:
                         _cached_closes.clear()
                         st.rerun()
 
-        with m6:
-            tg_token = _secret("telegram", "bot_token")
+            st.divider()
+            st.markdown("**Telegram**")
             if not tg_token:
-                st.info("To post weekly changes to Telegram, add this to the app's Secrets (share.streamlit.io → "
-                        "⋮ → Settings → Secrets), then reload:\n\n"
-                        "```\n[telegram]\nbot_token = \"PASTE-BOT-TOKEN\"\n```")
+                st.info("Add this to the app's Secrets (share.streamlit.io → ⋮ → Settings → Secrets), then reboot:"
+                        "\n\n```\n[telegram]\nbot_token = \"PASTE-BOT-TOKEN\"\n```")
             else:
-                chat_id = cfg.get("telegram_chat_id")
-                with st.expander("Telegram group and link" + (f" — {cfg.get('telegram_chat_title', chat_id)}"
-                                                              if chat_id else " — not set up yet"),
-                                 expanded=not chat_id):
-                    st.caption("Detect lists the groups the bot has seen. If yours isn't listed, send "
-                               "`/start` in the group (or any message that @mentions the bot), then detect again.")
-                    if st.button("Detect group"):
-                        try:
-                            st.session_state["tg_chats"] = notify.recent_group_chats(tg_token)
-                        except Exception as e:
-                            st.error(f"Telegram: {e}")
-                    found = st.session_state.get("tg_chats")
-                    if found == []:
-                        st.warning("No groups found yet. Send /start in the group, wait a few seconds, detect again.")
-                    elif found:
-                        opts = {c["id"]: c["title"] for c in found}
-                        gid = st.selectbox("Group", list(opts), format_func=opts.get)
-                        if st.button("Use this group", type="primary"):
-                            cfg.update(telegram_chat_id=gid, telegram_chat_title=opts[gid])
-                            if save_data(data, version, f"{cfg.get('name', pid)}: telegram group"):
-                                st.session_state.pop("tg_chats", None)
-                                st.rerun()
-                    url = st.text_input("App link to include in messages", value=cfg.get("app_url") or "",
-                                        placeholder="https://your-app.streamlit.app")
-                    if st.button("Save link") and url.strip() != (cfg.get("app_url") or ""):
-                        cfg["app_url"] = url.strip() or None
-                        if save_data(data, version, f"{cfg.get('name', pid)}: app link"):
+                st.caption(f"Group: {cfg.get('telegram_chat_title', chat_id) if chat_id else 'not connected'}. "
+                           "Detect lists the groups the bot has seen — if yours isn't listed, send "
+                           "/start@<bot name> in the group and detect again.")
+                c = st.columns(3)
+                if c[0].button("Detect group"):
+                    try:
+                        st.session_state["tg_chats"] = notify.recent_group_chats(tg_token)
+                    except Exception as e:
+                        st.error(f"Telegram: {e}")
+                if chat_id and c[1].button("Send a test message") and tg_send(f"Test from {name} tracker ✅"):
+                    st.success("Test sent — check the group.")
+                found = st.session_state.get("tg_chats")
+                if found == []:
+                    st.warning("No groups found yet. Send /start in the group, wait a few seconds, detect again.")
+                elif found:
+                    opts = {c_["id"]: c_["title"] for c_ in found}
+                    gid = st.selectbox("Group", list(opts), format_func=opts.get)
+                    if st.button("Use this group", type="primary"):
+                        cfg.update(telegram_chat_id=gid, telegram_chat_title=opts[gid])
+                        if save_data(data, version, f"{name}: telegram group"):
+                            st.session_state.pop("tg_chats", None)
                             st.rerun()
-
-                if chat_id and have_lots and not ch.empty:
-                    weeks = list(dict.fromkeys(ch["week"]))
-                    wk = st.selectbox("Week to publish", weeks, format_func=lambda w: f"Week of {w:%d %b %Y}")
-                    note = st.text_input("Optional note (e.g. market view, reason for a change)")
-                    msg = notify.week_message(cfg.get("name", pid), wk, ch[ch["week"] == wk], s,
-                                              cfg.get("app_url"), note.strip() or None)
-                    st.markdown("**Preview**")
-                    with st.container(border=True):
-                        st.markdown(notify.preview_markdown(msg))
-                    sent = (cfg.get("published_weeks") or {}).get(wk.strftime("%Y-%m-%d"))
-                    again = True
-                    if sent:
-                        st.warning(f"This week was already posted on {sent}.")
-                        again = st.checkbox("Post it again anyway")
-                    c1, c2 = st.columns([1, 3])
-                    if c1.button("Send to Telegram", type="primary", disabled=not again):
-                        try:
-                            notify.send_message(tg_token, chat_id, msg)
-                        except Exception as e:
-                            st.error(f"Telegram didn't accept the message: {e}")
-                        else:
-                            stamp = pd.Timestamp.now(tz="Asia/Kolkata").strftime("%d %b %Y %H:%M")
-                            cfg.setdefault("published_weeks", {})[wk.strftime("%Y-%m-%d")] = stamp
-                            if save_data(data, version, f"{cfg.get('name', pid)}: published week of {wk:%d %b}"):
-                                st.rerun()
-                            else:
-                                st.warning("Posted to Telegram, but recording it as sent failed.")
-                    if c2.button("Send a test message"):
-                        try:
-                            notify.send_message(tg_token, chat_id, f"Test from {cfg.get('name', pid)} tracker ✅")
-                            st.success("Test sent — check the group.")
-                        except Exception as e:
-                            st.error(f"Telegram: {e}")
+                url = st.text_input("App link to include in messages", value=cfg.get("app_url") or "",
+                                    placeholder="https://your-app.streamlit.app")
+                if st.button("Save link") and url.strip() != (cfg.get("app_url") or ""):
+                    cfg["app_url"] = url.strip() or None
+                    if save_data(data, version, f"{name}: app link"):
+                        st.rerun()
 
         with m5:
             st.caption("For a second model portfolio (e.g. the US one). Each portfolio has its own settings and lots.")
