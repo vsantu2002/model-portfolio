@@ -74,9 +74,21 @@ def save_data(data: dict, version, message: str) -> bool:
     return True
 
 
+PRICE_CACHE_VERSION = 2   # bump whenever fetch_closes' return shape changes
+
+
 @st.cache_data(ttl=4 * 3600, show_spinner="Fetching prices…")
-def get_closes(tickers: tuple, start: str, seed: tuple):
+def _cached_closes(tickers: tuple, start: str, seed: tuple, version: int):
     return prices.fetch_closes(list(tickers), start, dict(seed))
+
+
+def get_closes(tickers: tuple, start: str, seed: tuple):
+    """Always returns (closes, splits, missing), even if an older cached
+    result without splits is still around after an update."""
+    res = _cached_closes(tickers, start, seed, PRICE_CACHE_VERSION)
+    if len(res) == 2:
+        return res[0], pd.DataFrame(), res[1]
+    return res
 
 
 # ── formatting ────────────────────────────────────────────────────────────
@@ -187,7 +199,7 @@ with st.sidebar:
     else:
         pid = None
     if st.button("↻ Refresh prices", width="stretch", help="Prices are cached for 4 hours."):
-        get_closes.clear()
+        _cached_closes.clear()
         st.rerun()
     st.divider()
     if edit_pin and not editing:
@@ -604,7 +616,7 @@ if editing:
                                benchmarks={str(r.label).strip(): str(r.ticker).strip()
                                            for r in bed.itertuples() if str(r.label).strip() and str(r.ticker).strip()})
                     if save_data(data, version, f"{cfg['name']}: settings"):
-                        get_closes.clear()
+                        _cached_closes.clear()
                         st.rerun()
 
         with m5:
