@@ -9,7 +9,9 @@
     "Nifty 50": "^NSEI",
     "Nifty 500": "^CRSLDX",
     "Nifty Smallcap 250": "NIFTYSMLCAP250.NS"
-   }
+   },
+   "telegram_chat_id": -1002707776358,
+   "telegram_chat_title": "10X Club in 10Y"
   }
  },
  "lots": [
