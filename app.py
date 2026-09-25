@@ -566,27 +566,40 @@ if editing:
             exit_opts = {r.id: f"{r.symbol} — {r.q:g} sh" for r in open_lots.itertuples()
                          if r.id not in planned_exit_ids} if not open_lots.empty else {}
             c = st.columns([3, 3, 1.2], vertical_alignment="bottom")
-            lid = c[0].selectbox("Exit", list(exit_opts), format_func=exit_opts.get, index=None,
-                                 placeholder="Pick a holding")
-            why_x = c[1].text_input("Reason (optional)", key="plan_exit_note")
-            if c[2].button("Add exit", disabled=lid is None, width="stretch"):
-                lot = open_lots[open_lots["id"] == lid].iloc[0]
-                items.append({"id": core.new_lot_id(), "action": "exit", "symbol": lot["symbol"],
-                              "name": lot["name"], "lot_id": lid, "note": why_x.strip() or None, "ref_price": None})
-                save_plan(f"plan exit {lot['symbol']}")
+            lids = c[0].multiselect("Exit", list(exit_opts), format_func=exit_opts.get,
+                                    placeholder="Pick one or more holdings")
+            why_x = c[1].text_input("Reason (optional, applies to all)", key="plan_exit_note")
+            if c[2].button("Add exits" if len(lids) > 1 else "Add exit", disabled=not lids, width="stretch"):
+                added = []
+                for lid in lids:
+                    lot = open_lots[open_lots["id"] == lid].iloc[0]
+                    items.append({"id": core.new_lot_id(), "action": "exit", "symbol": lot["symbol"],
+                                  "name": lot["name"], "lot_id": lid, "note": why_x.strip() or None,
+                                  "ref_price": None})
+                    added.append(lot["symbol"])
+                save_plan("plan exit " + ", ".join(added))
             c = st.columns([3, 3, 1.2], vertical_alignment="bottom")
-            sym_e = c[0].text_input("Enter", key="plan_entry_sym", placeholder="HFCL or 543210.BO").strip().upper()
-            why_e = c[1].text_input("Reason (optional)", key="plan_entry_note")
-            if c[2].button("Add entry", disabled=not sym_e, width="stretch"):
-                if cur == "INR" and "." not in sym_e:
-                    sym_e += ".NS"
-                if any(i["action"] == "entry" and i["symbol"] == sym_e for i in items):
-                    st.warning(f"{sym_e} is already in the plan.")
+            raw_e = c[0].text_input("Enter", key="plan_entry_sym",
+                                    placeholder="One or more: HFCL, BEML, 543210.BO")
+            why_e = c[1].text_input("Reason (optional, applies to all)", key="plan_entry_note")
+            syms = []
+            for tok in raw_e.replace(",", " ").split():
+                t = tok.strip().upper()
+                if cur == "INR" and "." not in t:
+                    t += ".NS"
+                if t not in syms:
+                    syms.append(t)
+            if c[2].button("Add entries" if len(syms) > 1 else "Add entry", disabled=not syms, width="stretch"):
+                already = {i["symbol"] for i in items if i["action"] == "entry"}
+                new = [t for t in syms if t not in already]
+                for t in new:
+                    items.append({"id": core.new_lot_id(), "action": "entry", "symbol": t,
+                                  "name": t.split(".")[0], "lot_id": None, "note": why_e.strip() or None,
+                                  "ref_price": last_price(t)})
+                if new:
+                    save_plan("plan entry " + ", ".join(new))
                 else:
-                    items.append({"id": core.new_lot_id(), "action": "entry", "symbol": sym_e,
-                                  "name": sym_e.split(".")[0], "lot_id": None, "note": why_e.strip() or None,
-                                  "ref_price": last_price(sym_e)})
-                    save_plan(f"plan entry {sym_e}")
+                    st.warning("Those are already in the plan.")
 
             if not items:
                 st.info("No plan yet.")
