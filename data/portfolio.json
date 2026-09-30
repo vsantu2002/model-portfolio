@@ -22,6 +22,24 @@
       "lot_id": "566a1e2117",
       "note": null,
       "ref_price": null
+     },
+     {
+      "id": "48605a3b62",
+      "action": "entry",
+      "symbol": "OPTIEMUS.NS",
+      "name": "OPTIEMUS",
+      "lot_id": null,
+      "note": null,
+      "ref_price": 767.75
+     },
+     {
+      "id": "050e049f88",
+      "action": "entry",
+      "symbol": "INFRACOM.NS",
+      "name": "INFRACOM",
+      "lot_id": null,
+      "note": null,
+      "ref_price": null
      }
     ],
     "published": null,
