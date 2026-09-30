@@ -11,7 +11,22 @@
     "Nifty Smallcap 250": "NIFTYSMLCAP250.NS"
    },
    "telegram_chat_id": -1002707776358,
-   "telegram_chat_title": "10X Club in 10Y"
+   "telegram_chat_title": "10X Club in 10Y",
+   "plan": {
+    "items": [
+     {
+      "id": "ca871b9835",
+      "action": "exit",
+      "symbol": "RUBICON.NS",
+      "name": "Rubicon Research Ltd",
+      "lot_id": "566a1e2117",
+      "note": null,
+      "ref_price": null
+     }
+    ],
+    "published": null,
+    "published_at": null
+   }
   }
  },
  "lots": [
