@@ -31,15 +31,6 @@
       "lot_id": null,
       "note": null,
       "ref_price": 767.75
-     },
-     {
-      "id": "050e049f88",
-      "action": "entry",
-      "symbol": "INFRACOM.NS",
-      "name": "INFRACOM",
-      "lot_id": null,
-      "note": null,
-      "ref_price": null
      }
     ],
     "published": null,
