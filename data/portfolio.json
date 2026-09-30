@@ -33,8 +33,27 @@
       "ref_price": 767.75
      }
     ],
-    "published": null,
-    "published_at": null
+    "published": [
+     {
+      "id": "ca871b9835",
+      "action": "exit",
+      "symbol": "RUBICON.NS",
+      "name": "Rubicon Research Ltd",
+      "lot_id": "566a1e2117",
+      "note": null,
+      "ref_price": null
+     },
+     {
+      "id": "48605a3b62",
+      "action": "entry",
+      "symbol": "OPTIEMUS.NS",
+      "name": "OPTIEMUS",
+      "lot_id": null,
+      "note": null,
+      "ref_price": 767.75
+     }
+    ],
+    "published_at": "30 Sep 2026 15:35"
    }
   }
  },
