@@ -34,6 +34,17 @@
     "skipped": [],
     "sent_at": "01 Oct 2026 09:33"
    }
+  },
+  "USMi20Portfolio": {
+   "name": "US Mi20 Portfolio",
+   "currency": "USD",
+   "capital": 20000.0,
+   "slots": 20,
+   "benchmarks": {
+    "S&P 500": "^GSPC",
+    "Nasdaq 100": "^NDX",
+    "Russell 2000": "^RUT"
+   }
   }
  },
  "lots": [
