@@ -37,9 +37,9 @@
    "app_url": "https://alpha-mi20.streamlit.app/"
   },
   "USMi20Portfolio": {
-   "name": "US Mi20 Portfolio",
+   "name": "US MU20 Portfolio",
    "currency": "USD",
-   "capital": 20000.0,
+   "capital": 10000.0,
    "slots": 20,
    "benchmarks": {
     "S&P 500": "^GSPC",
