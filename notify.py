@@ -82,6 +82,27 @@ def week_message(name: str, week: pd.Timestamp, changes: pd.DataFrame, stats: di
     return "\n".join(lines)
 
 
+# ── editable text ─────────────────────────────────────────────────────────
+# The app shows each message as plain text the user can edit before sending:
+# **bold** for headings, and the link as "View portfolio: <url>" (Telegram
+# makes bare URLs clickable). Sending converts it back to Telegram HTML.
+def to_editable(msg: str) -> str:
+    import re
+    t = re.sub(r"<b>(.*?)</b>", r"**\1**", msg)
+    t = re.sub(r'<a href="(.*?)">(.*?)</a>', r"\2: \1", t)
+    return html.unescape(t)
+
+
+def from_editable(text: str) -> str:
+    import re
+    t = html.escape(text.strip(), quote=False)
+    return re.sub(r"\*\*(.+?)\*\*", r"<b>\1</b>", t)
+
+
+def preview_editable(text: str) -> str:
+    return "  \n".join(text.replace("$", "\\$").split("\n"))
+
+
 def preview_markdown(msg: str) -> str:
     """Render the Telegram HTML message as Streamlit markdown for the preview."""
     import re
@@ -140,7 +161,8 @@ def plan_update_message(name: str, added: list[dict], removed: list[dict], items
 
 def executed_message(name: str, ex: dict, holdings: list[tuple], stats: dict, app_url: str | None = None) -> str:
     """Morning message. ex = the execution record saved by the app; holdings =
-    [(symbol, pnl_pct)] of all open positions after execution."""
+    [(symbol, pnl_pct)] of all open positions after execution (only the count
+    is posted; the link shows the full list)."""
     e = html.escape
     d = pd.Timestamp(ex["date"])
     lines = [f"<b>✅ {e(name)} — executed {d:%d %b %Y}</b>"]
@@ -159,9 +181,7 @@ def executed_message(name: str, ex: dict, holdings: list[tuple], stats: dict, ap
         lines += ["", "<b>Not done (carried to next plan)</b>"]
         lines += [f"• {'exit' if k['action'] == 'exit' else 'enter'} {_s(k['symbol'])}"
                   + (f" — {e(k['reason'])}" if k.get("reason") else "") for k in ex["skipped"]]
-    lines += ["", f"<b>Portfolio now ({len(holdings)})</b>"]
-    lines += [", ".join(f"{_s(sym)} {_pct(p)}" for sym, p in holdings) or "none"]
-    lines += ["", f"Portfolio {_pct(stats.get('total_return_pct'))} since start"]
+    lines += ["", f"Open positions: {len(holdings)} · portfolio {_pct(stats.get('total_return_pct'))} since start"]
     if app_url:
         lines.append(f'<a href="{e(app_url, quote=True)}">View portfolio</a>')
     return "\n".join(lines)
@@ -174,8 +194,7 @@ def no_change_message(name: str, holdings: list[tuple], stats: dict, note: str |
     lines = [f"<b>⏸️ {e(name)} — no changes this review</b>"]
     if note:
         lines += ["", e(note)]
-    lines += ["", f"<b>Holding ({len(holdings)})</b>",
-              ", ".join(f"{_s(sym)} {_pct(p)}" for sym, p in holdings) or "none"]
+    lines += ["", f"Holding all {len(holdings)} positions."]
     summary = f"Portfolio {_pct(stats.get('total_return_pct'))} since start"
     bench = stats.get("bench") or {}
     if bench:

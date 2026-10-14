@@ -1,8 +1,8 @@
 """
 Model Portfolio Tracker -- Streamlit app.
 
-View: anyone with the link. Edit: after entering the edit PIN (sidebar), if one
-is configured in secrets. Data lives in data/portfolio.json in this app's own
+View: anyone with the link, or only with the pass code if [app] view_pin is set
+in secrets. Edit: after entering the edit PIN (sidebar), if one is configured. Data lives in data/portfolio.json in this app's own
 GitHub repo (see storage.py); prices come from yfinance (see prices.py).
 """
 
@@ -187,6 +187,29 @@ def pnl_color(v):
         return ""
     return f"color: {POS}" if v > 0 else (f"color: {NEG}" if v < 0 else "")
 
+
+# ── access gate ───────────────────────────────────────────────────────────
+# [app] view_pin in secrets: everyone needs it to see anything. The edit PIN
+# also opens the gate (and unlocks editing). No view_pin = open to the link.
+def access_gate():
+    view_pin, edit = _secret("app", "view_pin"), _secret("app", "edit_pin")
+    if not view_pin or st.session_state.get("viewer_ok"):
+        return
+    st.title("📈 Model Portfolio")
+    with st.form("gate"):
+        code = st.text_input("Pass code", type="password")
+        ok = st.form_submit_button("Open")
+    if ok:
+        if code == str(view_pin) or (edit and code == str(edit)):
+            st.session_state["viewer_ok"] = True
+            if edit and code == str(edit):
+                st.session_state["unlocked"] = True
+            st.rerun()
+        st.error("Wrong pass code")
+    st.stop()
+
+
+access_gate()
 
 # ── load ──────────────────────────────────────────────────────────────────
 try:
@@ -534,10 +557,18 @@ if editing:
                 st.error(f"Telegram didn't accept the message: {e}")
                 return False
 
-        def preview(msg: str):
-            st.markdown("**Preview**")
-            with st.container(border=True):
-                st.markdown(notify.preview_markdown(msg))
+        def compose(msg: str, key: str) -> str:
+            """Editable message box, pre-filled from the app's draft. Returns the
+            Telegram HTML of whatever is in the box. **text** = bold. The box
+            refills itself only when the draft changes (e.g. the plan changes)."""
+            import hashlib
+            draft = notify.to_editable(msg)
+            k = f"msg_{key}_{hashlib.md5(draft.encode()).hexdigest()[:8]}"
+            text = st.text_area("Message (edit freely; **text** shows in bold)", value=draft, key=k,
+                                height=max(140, 26 * (draft.count(chr(10)) + 2)))
+            with st.expander("Preview"):
+                st.markdown(notify.preview_editable(text))
+            return notify.from_editable(text)
 
         def now_stamp() -> str:
             return pd.Timestamp.now(tz="Asia/Kolkata").strftime("%d %b %Y %H:%M")
@@ -607,13 +638,10 @@ if editing:
                     if not tg_ready:
                         tg_hint()
                     else:
-                        nc_note = st.text_input("Note (optional)", key="nochange_note",
-                                                placeholder="e.g. All holdings still in trend")
                         held = [(r.symbol, r.pnl_pct) for r in hold.sort_values("pnl_pct", ascending=False).itertuples()] \
                             if have_lots and not hold.empty else []
-                        msg = notify.no_change_message(name, held, s if have_lots else {}, nc_note.strip() or None,
-                                                       cfg.get("app_url"))
-                        preview(msg)
+                        msg = compose(notify.no_change_message(name, held, s if have_lots else {}, None,
+                                                               cfg.get("app_url")), "nochange")
                         if cfg.get("last_no_change"):
                             st.caption(f"Last 'no changes' post: {cfg['last_no_change']}")
                         if st.button("Post 'No changes'", type="primary") and tg_send(msg):
@@ -640,10 +668,8 @@ if editing:
                 if not tg_ready:
                     tg_hint()
                 else:
-                    note = st.text_input("Note for the group (optional)", key="plan_note")
                     if plan.get("published") is None:
-                        msg = notify.plan_message(name, items, note.strip() or None, cfg.get("app_url"))
-                        preview(msg)
+                        msg = compose(notify.plan_message(name, items, None, cfg.get("app_url")), "plan")
                         if st.button("Publish plan", type="primary") and tg_send(msg):
                             plan.update(published=[dict(i) for i in items], published_at=now_stamp())
                             save_plan("plan published")
@@ -652,8 +678,7 @@ if editing:
                         if not added and not removed:
                             st.success(f"Published {plan['published_at']} — no changes since.")
                         else:
-                            msg = notify.plan_update_message(name, added, removed, items, note.strip() or None)
-                            preview(msg)
+                            msg = compose(notify.plan_update_message(name, added, removed, items, None), "planupd")
                             if st.button("Publish update", type="primary") and tg_send(msg):
                                 plan.update(published=[dict(i) for i in items], published_at=now_stamp())
                                 save_plan("plan update published")
@@ -760,8 +785,8 @@ if editing:
                 else:
                     held = [(r.symbol, r.pnl_pct) for r in hold.sort_values("pnl_pct", ascending=False).itertuples()] \
                         if have_lots and not hold.empty else []
-                    msg = notify.executed_message(name, ex_last, held, s if have_lots else {}, cfg.get("app_url"))
-                    preview(msg)
+                    msg = compose(notify.executed_message(name, ex_last, held, s if have_lots else {},
+                                                          cfg.get("app_url")), "exec")
                     again = True
                     if ex_last.get("sent_at"):
                         st.caption(f"Sent {ex_last['sent_at']}.")
@@ -779,10 +804,7 @@ if editing:
                 st.caption("Optional recap of a whole week's changes.")
                 weeks = list(dict.fromkeys(ch["week"]))
                 wk = st.selectbox("Week", weeks, format_func=lambda w: f"Week of {w:%d %b %Y}")
-                note = st.text_input("Optional note", key="week_note")
-                msg = notify.week_message(name, wk, ch[ch["week"] == wk], s, cfg.get("app_url"),
-                                          note.strip() or None)
-                preview(msg)
+                msg = compose(notify.week_message(name, wk, ch[ch["week"] == wk], s, cfg.get("app_url")), "week")
                 sent = (cfg.get("published_weeks") or {}).get(wk.strftime("%Y-%m-%d"))
                 again = True
                 if sent:
@@ -923,7 +945,8 @@ if editing:
                         st.session_state["tg_chats"] = notify.recent_group_chats(tg_token)
                     except Exception as e:
                         st.error(f"Telegram: {e}")
-                if chat_id and c[1].button("Send a test message") and tg_send(f"Test from {name} tracker ✅"):
+                test_txt = st.text_input("Test message", value=f"Test from {name} tracker ✅", key="tg_test_txt")
+                if chat_id and c[1].button("Send a test message") and tg_send(notify.from_editable(test_txt)):
                     st.success("Test sent — check the group.")
                 found = st.session_state.get("tg_chats")
                 if found == []:
