@@ -12,58 +12,7 @@
    },
    "telegram_chat_id": -1002707776358,
    "telegram_chat_title": "10X Club in 10Y",
-   "plan": {
-    "items": [
-     {
-      "id": "c0a942e57c",
-      "action": "exit",
-      "symbol": "LUMAXTECH.NS",
-      "name": "Lumax Auto Technologies Ltd",
-      "lot_id": "2417e0b597",
-      "note": "Weekly review",
-      "ref_price": null
-     },
-     {
-      "id": "1dac9bc8ef",
-      "action": "entry",
-      "symbol": "WSTCSTPAPR.NS",
-      "name": "WSTCSTPAPR",
-      "lot_id": null,
-      "note": "West Coast Paper Mills",
-      "ref_price": 938.0
-     },
-     {
-      "id": "8e3aa53b1a",
-      "action": "exit",
-      "symbol": "CUPID.NS",
-      "name": "Cupid Ltd",
-      "lot_id": "c18555928a",
-      "note": null,
-      "ref_price": null
-     }
-    ],
-    "published": [
-     {
-      "id": "c0a942e57c",
-      "action": "exit",
-      "symbol": "LUMAXTECH.NS",
-      "name": "Lumax Auto Technologies Ltd",
-      "lot_id": "2417e0b597",
-      "note": "Weekly review",
-      "ref_price": null
-     },
-     {
-      "id": "1dac9bc8ef",
-      "action": "entry",
-      "symbol": "WSTCSTPAPR.NS",
-      "name": "WSTCSTPAPR",
-      "lot_id": null,
-      "note": "West Coast Paper Mills",
-      "ref_price": 938.0
-     }
-    ],
-    "published_at": "14 Oct 2026 15:14"
-   },
+   "plan": null,
    "last_execution": {
     "date": "2026-10-01",
     "exits": [
