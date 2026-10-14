@@ -22,6 +22,15 @@
       "lot_id": null,
       "note": "West Coast Paper Mills",
       "ref_price": 940.45
+     },
+     {
+      "id": "66f0e1e068",
+      "action": "exit",
+      "symbol": "LUMAXTECH.NS",
+      "name": "Lumax Auto Technologies Ltd",
+      "lot_id": "2417e0b597",
+      "note": "Lumax Tech",
+      "ref_price": null
      }
     ],
     "published": null,
