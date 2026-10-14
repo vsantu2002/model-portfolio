@@ -31,6 +31,15 @@
       "lot_id": null,
       "note": "West Coast Paper Mills",
       "ref_price": 938.0
+     },
+     {
+      "id": "8e3aa53b1a",
+      "action": "exit",
+      "symbol": "CUPID.NS",
+      "name": "Cupid Ltd",
+      "lot_id": "c18555928a",
+      "note": null,
+      "ref_price": null
      }
     ],
     "published": [
