@@ -12,7 +12,21 @@
    },
    "telegram_chat_id": -1002707776358,
    "telegram_chat_title": "10X Club in 10Y",
-   "plan": null,
+   "plan": {
+    "items": [
+     {
+      "id": "673890eb70",
+      "action": "entry",
+      "symbol": "WSTCSTPAPR.NS",
+      "name": "WSTCSTPAPR",
+      "lot_id": null,
+      "note": "West Coast Paper Mills",
+      "ref_price": 940.45
+     }
+    ],
+    "published": null,
+    "published_at": null
+   },
    "last_execution": {
     "date": "2026-10-01",
     "exits": [
