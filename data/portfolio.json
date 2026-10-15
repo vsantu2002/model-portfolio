@@ -12,50 +12,27 @@
    },
    "telegram_chat_id": -1002707776358,
    "telegram_chat_title": "10X Club in 10Y",
-   "plan": {
-    "items": [
-     {
-      "id": "673890eb70",
-      "action": "entry",
-      "symbol": "WSTCSTPAPR.NS",
-      "name": "WSTCSTPAPR",
-      "lot_id": null,
-      "note": "West Coast Paper Mills",
-      "ref_price": 940.45
-     },
-     {
-      "id": "66f0e1e068",
-      "action": "exit",
-      "symbol": "LUMAXTECH.NS",
-      "name": "Lumax Auto Technologies Ltd",
-      "lot_id": "2417e0b597",
-      "note": "Lumax Tech",
-      "ref_price": null
-     }
-    ],
-    "published": null,
-    "published_at": null
-   },
+   "plan": null,
    "last_execution": {
-    "date": "2026-10-01",
+    "date": "2026-10-15",
     "exits": [
      {
-      "symbol": "RUBICON.NS",
-      "price": 1634.0,
-      "qty": 55.0,
-      "pnl_pct": -11.099020674646354
+      "symbol": "LUMAXTECH.NS",
+      "price": 1913.6,
+      "qty": 50.0,
+      "pnl_pct": -5.036970869932011
      }
     ],
     "entries": [
      {
-      "symbol": "OPTIEMUS.NS",
-      "price": 772.25,
-      "qty": 130.0
+      "symbol": "WSTCSTPAPR.NS",
+      "price": 868.8,
+      "qty": 115.0
      }
     ],
     "replaced": [],
     "skipped": [],
-    "sent_at": "01 Oct 2026 09:33"
+    "sent_at": null
    },
    "app_url": "https://alpha-mi20.streamlit.app/",
    "last_no_change": "07 Oct 2026 14:06"
@@ -280,8 +257,8 @@
    "entry_date": "2026-08-20",
    "entry_price": 2015.1,
    "qty": 50.0,
-   "exit_date": null,
-   "exit_price": null,
+   "exit_date": "2026-10-15",
+   "exit_price": 1913.6,
    "commission": 0.0,
    "manual_price": null,
    "comment": ""
@@ -1456,6 +1433,20 @@
    "entry_date": "2026-10-01",
    "entry_price": 772.25,
    "qty": 130.0,
+   "exit_date": null,
+   "exit_price": null,
+   "commission": 0.0,
+   "manual_price": null,
+   "comment": null
+  },
+  {
+   "id": "83b58699a5",
+   "portfolio": "Mi20",
+   "symbol": "WSTCSTPAPR.NS",
+   "name": "WSTCSTPAPR",
+   "entry_date": "2026-10-15",
+   "entry_price": 868.8,
+   "qty": 115.0,
    "exit_date": null,
    "exit_price": null,
    "commission": 0.0,
