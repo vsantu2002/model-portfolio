@@ -158,6 +158,31 @@ def price_matrix(lots: pd.DataFrame, closes: pd.DataFrame, end: pd.Timestamp) ->
     return px
 
 
+def day_change(closes: pd.DataFrame, symbols) -> dict:
+    """1-day % move per symbol: last close vs the close before it (Yahoo's
+    history is on one share basis, so splits don't distort it). Symbols with
+    fewer than two closes are left out."""
+    out = {}
+    for sym in symbols:
+        if closes is None or sym not in closes.columns:
+            continue
+        v = closes[sym].dropna()
+        v = v[~v.index.duplicated(keep="last")]
+        if len(v) >= 2 and v.iloc[-2]:
+            out[sym] = (float(v.iloc[-1]) / float(v.iloc[-2]) - 1) * 100
+    return out
+
+
+def day_pnl(eq: pd.DataFrame, asof) -> tuple:
+    """(change in portfolio value, % change) from the business day before
+    `asof` to `asof`, from the equity curve."""
+    e = eq["equity"].loc[:pd.Timestamp(asof).normalize()]
+    if len(e) < 2 or not e.iloc[-2]:
+        return None, None
+    d = float(e.iloc[-1] - e.iloc[-2])
+    return d, d / float(e.iloc[-2]) * 100
+
+
 def latest_prices(lots: pd.DataFrame, px: pd.DataFrame) -> dict:
     return {s: float(px[s].iloc[-1]) for s in lots["symbol"].unique() if s in px.columns}
 

@@ -9,8 +9,12 @@ itself, after entering the edit PIN.
 - **Live app:** https://alpha-mi20.streamlit.app
 - **Prices:** end-of-day closes from yfinance (`.NS` first, with an automatic
   `.BO` fallback for BSE-only stocks). During market hours it shows the price so
-  far, labelled "intraday". Prices are cached for 4 hours; **↻ Refresh prices**
-  in the sidebar forces a fresh pull.
+  far, labelled "intraday". Prices refresh every 15 minutes while the market
+  is open (cached for 4 hours otherwise); **↻ Refresh prices** in the sidebar
+  forces a fresh pull.
+- **1D %:** on Holdings and Closed trades, the move from the previous close to
+  the latest price: today's live move during market hours, the last session's
+  move on weekends and holidays. Holdings also shows the portfolio's 1-day change.
 - **Splits and bonuses:** Yahoo rewrites a stock's past prices after a
   split or bonus. The app reads Yahoo's split records and checks each lot to
   see which basis it was recorded on, so P&L, history and "since exit" stay

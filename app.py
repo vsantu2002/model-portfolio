@@ -79,14 +79,28 @@ PRICE_CACHE_VERSION = 2   # bump whenever fetch_closes' return shape changes
 
 
 @st.cache_data(ttl=4 * 3600, show_spinner="Fetching prices…")
-def _cached_closes(tickers: tuple, start: str, seed: tuple, version: int):
+def _cached_closes(tickers: tuple, start: str, seed: tuple, version: int, slot: str = ""):
     return prices.fetch_closes(list(tickers), start, dict(seed))
 
 
-def get_closes(tickers: tuple, start: str, seed: tuple):
+def _market_slot(currency: str) -> str:
+    """Part of the price-cache key: a new 15-minute slot while the market is
+    open (so live prices and 1D % stay fresh), one fixed key otherwise."""
+    from datetime import datetime, time
+    from zoneinfo import ZoneInfo
+    tz, open_t, close_t = MARKET_HOURS.get(currency, MARKET_HOURS["INR"])
+    now = datetime.now(ZoneInfo(tz))
+    # run until 20 min after the close, so the final close is picked up
+    end = (datetime.combine(now.date(), time(*close_t)) + pd.Timedelta(minutes=20)).time()
+    if now.weekday() < 5 and time(*open_t) <= now.time() < end:
+        return f"{now:%Y%m%d}-{(now.hour * 60 + now.minute) // 15}"
+    return ""
+
+
+def get_closes(tickers: tuple, start: str, seed: tuple, currency: str = "INR"):
     """Always returns (closes, splits, missing), even if an older cached
     result without splits is still around after an update."""
-    res = _cached_closes(tickers, start, seed, PRICE_CACHE_VERSION)
+    res = _cached_closes(tickers, start, seed, PRICE_CACHE_VERSION, _market_slot(currency))
     if len(res) == 2:
         return res[0], pd.DataFrame(), res[1]
     return res
@@ -299,7 +313,7 @@ if have_lots:
                           **{t: 1000.0 for t in benchmarks.values()}}.items()))
     tickers = tuple(sorted(set(lots["symbol"]) | set(benchmarks.values())))
     try:
-        closes, splits, missing = get_closes(tickers, start, seed)
+        closes, splits, missing = get_closes(tickers, start, seed, cur)
     except Exception as e:
         closes, splits, missing = pd.DataFrame(), pd.DataFrame(), list(tickers)
         st.warning(f"Price download failed ({e}). Showing entry/manual prices until the next refresh.")
@@ -315,6 +329,11 @@ if have_lots:
         columns={v: k for k, v in bench_cols.items()}) if bench_cols else pd.DataFrame(), eq.index)
     closed = core.closed_trades(lots, last, priced=set(stock_cols) - set(missing))
     hold = core.holdings_table(lots, last, float(eq["equity"].iloc[-1]))
+    d1 = core.day_change(closes, set(stock_cols) - set(missing))
+    if not hold.empty:
+        hold["d1_pct"] = hold["symbol"].map(d1)
+    if not closed.empty:
+        closed["d1_pct"] = closed["symbol"].map(d1)
     s = core.stats(eq, closed, bench, capital)
     open_missing = sorted(set(missing) & set(lots.loc[lots["is_open"], "symbol"]))
     if open_missing:
@@ -379,21 +398,24 @@ with tabs[1]:
         st.info("No open positions.")
     else:
         upnl = hold["pnl"].sum()
+        _dv, _dp = core.day_pnl(eq, px_date) if px_date is not None else (None, None)
         kpis([
             ("Open positions", f"{len(hold)} / {slots}", "slots used", "", None),
             ("Invested", money(hold["cost"].sum(), cur), "at cost", "", None),
             ("Market value", money(hold["value"].sum(), cur), "", "", None),
             ("Unrealised P&L", money(upnl, cur), pct(upnl / hold["cost"].sum() * 100), tone(upnl), None),
+            ("1-day change", money(_dv, cur), pct(_dp), tone(_dp),
+             "Change in portfolio value over the latest trading day."),
         ])
         if hold["split_adj"].any():
             st.caption("Qty and entry price are on today's share basis for positions that had a split or bonus "
                        f"since entry ({', '.join(sorted(hold.loc[hold['split_adj'], 'symbol']))}).")
         _px = {i.get("lot_id") for i in ((cfg.get("plan") or {}).get("items") or []) if i["action"] == "exit"}
         hold = hold.assign(plan=["Exit planned" if i in _px else "" for i in hold["id"]])
-        view = hold[["symbol", "plan", "name", "entry_date", "entry_price", "qty", "ltp", "value", "pnl",
+        view = hold[["symbol", "plan", "name", "entry_date", "entry_price", "qty", "ltp", "d1_pct", "value", "pnl",
                      "pnl_pct", "weight_pct", "days", "comment"]]
         st.dataframe(
-            view.style.map(pnl_color, subset=["pnl", "pnl_pct"]),
+            view.style.map(pnl_color, subset=["pnl", "pnl_pct", "d1_pct"]),
             hide_index=True, width="stretch", height=min(38 * (len(view) + 1) + 4, 780),
             column_config={
                 "symbol": st.column_config.TextColumn("Stock", pinned=True), "plan": "Plan", "name": "Name",
@@ -401,6 +423,8 @@ with tabs[1]:
                 "entry_price": st.column_config.NumberColumn("Entry price", format="%.2f"),
                 "qty": st.column_config.NumberColumn("Qty", format="%g"),
                 "ltp": st.column_config.NumberColumn("Last", format="%.2f"),
+                "d1_pct": st.column_config.NumberColumn("1D %", format="%+.2f%%",
+                                                        help="Move from the previous close to the latest price."),
                 "value": st.column_config.NumberColumn("Value", format="localized"),
                 "pnl": st.column_config.NumberColumn("P&L", format="localized"),
                 "pnl_pct": st.column_config.NumberColumn("P&L %", format="%+.2f%%"),
@@ -461,9 +485,10 @@ with tabs[3]:
         ])
         st.caption(f"Best {s['best'][0]} {pct(s['best'][1])} · Worst {s['worst'][0]} {pct(s['worst'][1])}")
         view = closed[["symbol", "name", "entry_date", "entry_price", "exit_date", "exit_price", "qty",
-                       "pnl", "pnl_pct", "since_exit_pct", "ltp", "days", "comment"]]
+                       "pnl", "pnl_pct", "since_exit_pct", "ltp", "d1_pct", "days", "comment"]]
         st.dataframe(
-            view.style.map(pnl_color, subset=["pnl", "pnl_pct", "since_exit_pct"]), hide_index=True, width="stretch",
+            view.style.map(pnl_color, subset=["pnl", "pnl_pct", "since_exit_pct", "d1_pct"]), hide_index=True,
+            width="stretch",
             column_config={
                 "symbol": st.column_config.TextColumn("Stock", pinned=True), "name": "Name",
                 "entry_date": st.column_config.DateColumn("Entry", format="DD MMM YY"),
@@ -476,6 +501,8 @@ with tabs[3]:
                 "days": st.column_config.NumberColumn("Days", format="%d"),
                 "ltp": st.column_config.NumberColumn("Last", format="%.2f",
                                                      help="Latest price on today's share basis."),
+                "d1_pct": st.column_config.NumberColumn("1D %", format="%+.2f%%",
+                                                        help="Move from the previous close to the latest price."),
                 "since_exit_pct": st.column_config.NumberColumn(
                     "Since exit", format="%+.2f%%",
                     help="Move from the exit price to the latest price, adjusted for any later split or bonus. "
