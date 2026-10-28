@@ -12,7 +12,21 @@
    },
    "telegram_chat_id": -1002707776358,
    "telegram_chat_title": "10X Club in 10Y",
-   "plan": null,
+   "plan": {
+    "items": [
+     {
+      "id": "28f684dc61",
+      "action": "entry",
+      "symbol": "PVRINOX.NS",
+      "name": "PVRINOX",
+      "lot_id": null,
+      "note": "New Entry",
+      "ref_price": 1445.3
+     }
+    ],
+    "published": null,
+    "published_at": null
+   },
    "last_execution": {
     "date": "2026-10-15",
     "exits": [
