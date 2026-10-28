@@ -31,6 +31,15 @@
       "lot_id": null,
       "note": "New Entry",
       "ref_price": 3710.0
+     },
+     {
+      "id": "880053ef3e",
+      "action": "entry",
+      "symbol": "SSWL.NS",
+      "name": "SSWL",
+      "lot_id": null,
+      "note": "New Entry",
+      "ref_price": 526.6
      }
     ],
     "published": null,
