@@ -69,8 +69,63 @@
       "ref_price": null
      }
     ],
-    "published": null,
-    "published_at": null
+    "published": [
+     {
+      "id": "28f684dc61",
+      "action": "entry",
+      "symbol": "PVRINOX.NS",
+      "name": "PVRINOX",
+      "lot_id": null,
+      "note": "New Entry",
+      "ref_price": 1445.3
+     },
+     {
+      "id": "feab3cb989",
+      "action": "entry",
+      "symbol": "ACUTAAS.NS",
+      "name": "ACUTAAS",
+      "lot_id": null,
+      "note": "New Entry",
+      "ref_price": 3710.0
+     },
+     {
+      "id": "880053ef3e",
+      "action": "entry",
+      "symbol": "SSWL.NS",
+      "name": "SSWL",
+      "lot_id": null,
+      "note": "New Entry",
+      "ref_price": 526.6
+     },
+     {
+      "id": "91378289bf",
+      "action": "exit",
+      "symbol": "DIACABS.NS",
+      "name": "Diamond Power Infrastructure Ltd",
+      "lot_id": "3896d97d2d",
+      "note": "Exits as per review on 28th October 2026",
+      "ref_price": null
+     },
+     {
+      "id": "1497c0d9d3",
+      "action": "exit",
+      "symbol": "INOXINDIA.NS",
+      "name": "INOX India Ltd",
+      "lot_id": "8cff512cd0",
+      "note": "Exits as per review on 28th October 2026",
+      "ref_price": null
+     },
+     {
+      "id": "1f782f7fb4",
+      "action": "exit",
+      "symbol": "YATHARTH.NS",
+      "name": "Yatharth Hospital & Trauma Care Services Ltd",
+      "lot_id": "fd78e4f23a",
+      "note": "Exits as per review on 28th October 2026",
+      "ref_price": null
+     }
+    ],
+    "published_at": "28 Oct 2026 15:53"
    },
    "last_execution": {
     "date": "2026-10-15",
