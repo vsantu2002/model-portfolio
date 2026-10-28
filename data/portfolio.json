@@ -22,6 +22,15 @@
       "lot_id": null,
       "note": "New Entry",
       "ref_price": 1445.3
+     },
+     {
+      "id": "feab3cb989",
+      "action": "entry",
+      "symbol": "ACUTAAS.NS",
+      "name": "ACUTAAS",
+      "lot_id": null,
+      "note": "New Entry",
+      "ref_price": 3710.0
      }
     ],
     "published": null,
