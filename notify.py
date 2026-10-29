@@ -51,7 +51,11 @@ def send_message(token: str, chat_id, text: str) -> None:
 
 
 def _pct(v) -> str:
-    return "" if v is None or pd.isna(v) else f"{v:+.1f}%"
+    """▲ / ▼ instead of +/- (a leading '-' gets read as a hyphen)."""
+    if v is None or pd.isna(v):
+        return ""
+    r = round(float(v), 1)
+    return f"{'▲' if r > 0 else '▼' if r < 0 else ''}{abs(r):.1f}%"
 
 
 def _price(v) -> str:

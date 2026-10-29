@@ -130,17 +130,49 @@ def _indian(n: float) -> str:
     return ",".join(parts + [tail]) if parts else tail
 
 
+# Signs: the group reads "-5%" as a hyphen, so negatives show as "▼ 5%"
+# (and positive changes as "▲ 5%") everywhere, coloured red / blue.
+UP, DOWN = "▲ ", "▼ "
+
+
 def money(v, cur="INR") -> str:
     if v is None or pd.isna(v):
         return "—"
-    sign = "-" if v < 0 else ""
+    sign = DOWN if round(v) < 0 else ""
     return f"{sign}₹{_indian(v)}" if cur == "INR" else f"{sign}${abs(v):,.0f}"
 
 
-def pct(v, signed=True) -> str:
+def pct(v, signed=True, nd=2) -> str:
     if v is None or pd.isna(v):
         return "—"
-    return f"{v:+.2f}%" if signed else f"{v:.2f}%"
+    if not signed:
+        return f"{v:.{nd}f}%"
+    r = round(float(v), nd)
+    return f"{UP if r > 0 else DOWN if r < 0 else ''}{abs(r):.{nd}f}%"
+
+
+def cell_pct(v, nd=2) -> str:
+    """Table cell version of pct(): blank for missing."""
+    return "" if v is None or pd.isna(v) else pct(v, nd=nd)
+
+
+def cell_money(v, cur="INR") -> str:
+    """Table cell: amount without the currency symbol, ▼ for negatives."""
+    if v is None or pd.isna(v):
+        return ""
+    body = _indian(v) if cur == "INR" else f"{abs(v):,.0f}"
+    return (DOWN if round(v) < 0 else "") + body
+
+
+def styled(df: pd.DataFrame, pct_cols=(), money_cols=()):
+    """Arrows + red/blue for the given columns. Sorting still uses the numbers."""
+    pct_cols = [c for c in pct_cols if c in df.columns]
+    money_cols = [c for c in money_cols if c in df.columns]
+    fmt = {**{c: cell_pct for c in pct_cols}, **{c: (lambda v: cell_money(v, cur)) for c in money_cols}}
+    sty = df.style.format(fmt)
+    if pct_cols or money_cols:
+        sty = sty.map(pnl_color, subset=pct_cols + money_cols)
+    return sty
 
 
 KPI_CSS = """<style>
@@ -149,7 +181,12 @@ KPI_CSS = """<style>
 .kpi-l{font-size:.82rem;opacity:.68;margin-bottom:2px}
 .kpi-v{font-size:clamp(1.15rem,1.9vw,1.65rem);font-weight:600;line-height:1.25;overflow-wrap:anywhere}
 .kpi-s{font-size:.8rem;margin-top:3px;opacity:.8;overflow-wrap:anywhere}
-.kpi-s.pos{color:#2a78d6;opacity:1}.kpi-s.neg{color:#e34948;opacity:1}
+.kpi-s.pos,.kpi-v.pos{color:#2a78d6;opacity:1}.kpi-s.neg,.kpi-v.neg{color:#e34948;opacity:1}
+.bench-h{font-size:1.05rem;font-weight:600;margin:6px 0 6px}
+.kpi.bm{border-width:2px}
+.kpi.bm.pos{border-color:rgba(42,120,214,.55);background:rgba(42,120,214,.07)}
+.kpi.bm.neg{border-color:rgba(227,73,72,.55);background:rgba(227,73,72,.07)}
+.kpi.bm .kpi-l{opacity:.85;font-weight:600}
 </style>"""
 
 
@@ -159,11 +196,15 @@ def kpis(cards):
     truncates long values with '…' on narrower screens)."""
     import html
     cells = []
-    for label, value, sub, tone, tip in cards:
+    for card in cards:
+        label, value, sub, tone, tip = card[:5]
+        extra = card[5] if len(card) > 5 else ""          # extra card class, e.g. "bm pos"
+        value = str(value)
+        v_tone = "neg" if value.startswith(DOWN) else ("pos" if value.startswith(UP) else "")
         t = f' title="{html.escape(tip)}"' if tip else ""
         sub_html = f'<div class="kpi-s {tone or ""}">{html.escape(sub)}</div>' if sub else ""
-        cells.append(f'<div class="kpi"{t}><div class="kpi-l">{html.escape(label)}{" ⓘ" if tip else ""}</div>'
-                     f'<div class="kpi-v">{html.escape(str(value))}</div>{sub_html}</div>')
+        cells.append(f'<div class="kpi {extra}"{t}><div class="kpi-l">{html.escape(label)}{" ⓘ" if tip else ""}</div>'
+                     f'<div class="kpi-v {v_tone}">{html.escape(value)}</div>{sub_html}</div>')
     st.markdown(KPI_CSS + '<div class="kpi-grid">' + "".join(cells) + "</div>", unsafe_allow_html=True)
 
 
@@ -370,9 +411,16 @@ with tabs[0]:
         ])
 
         if s["bench"]:
-            st.caption("Same period · " + " · ".join(
-                f"{k} {pct(v)} (portfolio {'+' if s['total_return_pct'] - v >= 0 else ''}"
-                f"{s['total_return_pct'] - v:.2f} pts)" for k, v in s["bench"].items()))
+            st.markdown('<div class="bench-h">How we did vs the market (same period)</div>',
+                        unsafe_allow_html=True)
+            cards = []
+            for k, v in s["bench"].items():
+                gap = s["total_return_pct"] - v
+                ahead = gap >= 0
+                cards.append((f"vs {k}", f"{UP if ahead else DOWN}{abs(gap):.2f} pts",
+                              f"{'Ahead' if ahead else 'Behind'} · {k} {pct(v)} · us {pct(s['total_return_pct'])}",
+                              "", None, "bm " + ("pos" if ahead else "neg")))
+            kpis(cards)
 
         st.subheader("Return since start")
         fig = go.Figure()
@@ -415,7 +463,8 @@ with tabs[1]:
         view = hold[["symbol", "plan", "name", "entry_date", "entry_price", "qty", "ltp", "d1_pct", "value", "pnl",
                      "pnl_pct", "weight_pct", "days", "comment"]]
         st.dataframe(
-            view.style.map(pnl_color, subset=["pnl", "pnl_pct", "d1_pct"]),
+            styled(view, pct_cols=["pnl_pct", "d1_pct"], money_cols=["pnl"]).format(
+                lambda v: cell_money(v, cur), subset=["value"]),
             hide_index=True, width="stretch", height=min(38 * (len(view) + 1) + 4, 780),
             column_config={
                 "symbol": st.column_config.TextColumn("Stock", pinned=True), "plan": "Plan", "name": "Name",
@@ -423,11 +472,11 @@ with tabs[1]:
                 "entry_price": st.column_config.NumberColumn("Entry price", format="%.2f"),
                 "qty": st.column_config.NumberColumn("Qty", format="%g"),
                 "ltp": st.column_config.NumberColumn("Last", format="%.2f"),
-                "d1_pct": st.column_config.NumberColumn("1D %", format="%+.2f%%",
+                "d1_pct": st.column_config.NumberColumn("1D %",
                                                         help="Move from the previous close to the latest price."),
-                "value": st.column_config.NumberColumn("Value", format="localized"),
-                "pnl": st.column_config.NumberColumn("P&L", format="localized"),
-                "pnl_pct": st.column_config.NumberColumn("P&L %", format="%+.2f%%"),
+                "value": st.column_config.NumberColumn("Value"),
+                "pnl": st.column_config.NumberColumn("P&L"),
+                "pnl_pct": st.column_config.NumberColumn("P&L %"),
                 "weight_pct": st.column_config.ProgressColumn("Weight", format="%.1f%%", min_value=0,
                                                               max_value=max(10.0, float(view["weight_pct"].max()))),
                 "days": st.column_config.NumberColumn("Days", format="%d"),
@@ -454,13 +503,13 @@ with tabs[2]:
                     if act == "Entry":
                         sub = sub.drop(columns=["pnl_pct"])
                     col.dataframe(
-                        sub.style.map(pnl_color, subset=["pnl_pct"]) if act == "Exit" else sub,
+                        styled(sub, pct_cols=["pnl_pct"]),
                         hide_index=True, width="stretch",
                         column_config={"date": st.column_config.DateColumn("Date", format="DD MMM"),
                                        "symbol": "Stock", "name": "Name",
                                        "price": st.column_config.NumberColumn("Price", format="%.2f"),
                                        "qty": st.column_config.NumberColumn("Qty", format="%g"),
-                                       "pnl_pct": st.column_config.NumberColumn("Trade P&L", format="%+.2f%%"),
+                                       "pnl_pct": st.column_config.NumberColumn("Trade P&L"),
                                        "comment": "Comment"})
 
 # ── Closed trades ─────────────────────────────────────────────────────────
@@ -487,7 +536,7 @@ with tabs[3]:
         view = closed[["symbol", "name", "entry_date", "entry_price", "exit_date", "exit_price", "qty",
                        "pnl", "pnl_pct", "since_exit_pct", "ltp", "d1_pct", "days", "comment"]]
         st.dataframe(
-            view.style.map(pnl_color, subset=["pnl", "pnl_pct", "since_exit_pct", "d1_pct"]), hide_index=True,
+            styled(view, pct_cols=["pnl_pct", "since_exit_pct", "d1_pct"], money_cols=["pnl"]), hide_index=True,
             width="stretch",
             column_config={
                 "symbol": st.column_config.TextColumn("Stock", pinned=True), "name": "Name",
@@ -496,15 +545,15 @@ with tabs[3]:
                 "exit_date": st.column_config.DateColumn("Exit", format="DD MMM YY"),
                 "exit_price": st.column_config.NumberColumn("Exit price", format="%.2f"),
                 "qty": st.column_config.NumberColumn("Qty", format="%g"),
-                "pnl": st.column_config.NumberColumn("P&L", format="localized"),
-                "pnl_pct": st.column_config.NumberColumn("P&L %", format="%+.2f%%"),
+                "pnl": st.column_config.NumberColumn("P&L"),
+                "pnl_pct": st.column_config.NumberColumn("P&L %"),
                 "days": st.column_config.NumberColumn("Days", format="%d"),
                 "ltp": st.column_config.NumberColumn("Last", format="%.2f",
                                                      help="Latest price on today's share basis."),
-                "d1_pct": st.column_config.NumberColumn("1D %", format="%+.2f%%",
+                "d1_pct": st.column_config.NumberColumn("1D %",
                                                         help="Move from the previous close to the latest price."),
                 "since_exit_pct": st.column_config.NumberColumn(
-                    "Since exit", format="%+.2f%%",
+                    "Since exit",
                     help="Move from the exit price to the latest price, adjusted for any later split or bonus. "
                          "Positive = kept rising after the exit."),
                 "comment": "Comment"})
@@ -524,7 +573,7 @@ with tabs[4]:
             rgb = "42,120,214" if v > 0 else "227,73,72"
             return f"background-color: rgba({rgb},{a:.2f})"
 
-        shown = mr.apply(lambda col: col.map(lambda v: "" if pd.isna(v) else f"{v:+.1f}%"))
+        shown = mr.apply(lambda col: col.map(lambda v: cell_pct(v, nd=1)))
         shown.index = shown.index.astype(str)
         colors = mr.apply(lambda col: col.map(cell))
         colors.index = shown.index
