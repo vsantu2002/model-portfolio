@@ -12,141 +12,49 @@
    },
    "telegram_chat_id": -1002707776358,
    "telegram_chat_title": "10X Club in 10Y",
-   "plan": {
-    "items": [
-     {
-      "id": "28f684dc61",
-      "action": "entry",
-      "symbol": "PVRINOX.NS",
-      "name": "PVRINOX",
-      "lot_id": null,
-      "note": "New Entry",
-      "ref_price": 1445.3
-     },
-     {
-      "id": "feab3cb989",
-      "action": "entry",
-      "symbol": "ACUTAAS.NS",
-      "name": "ACUTAAS",
-      "lot_id": null,
-      "note": "New Entry",
-      "ref_price": 3710.0
-     },
-     {
-      "id": "880053ef3e",
-      "action": "entry",
-      "symbol": "SSWL.NS",
-      "name": "SSWL",
-      "lot_id": null,
-      "note": "New Entry",
-      "ref_price": 526.6
-     },
-     {
-      "id": "91378289bf",
-      "action": "exit",
-      "symbol": "DIACABS.NS",
-      "name": "Diamond Power Infrastructure Ltd",
-      "lot_id": "3896d97d2d",
-      "note": "Exits as per review on 28th October 2026",
-      "ref_price": null
-     },
-     {
-      "id": "1497c0d9d3",
-      "action": "exit",
-      "symbol": "INOXINDIA.NS",
-      "name": "INOX India Ltd",
-      "lot_id": "8cff512cd0",
-      "note": "Exits as per review on 28th October 2026",
-      "ref_price": null
-     },
-     {
-      "id": "1f782f7fb4",
-      "action": "exit",
-      "symbol": "YATHARTH.NS",
-      "name": "Yatharth Hospital & Trauma Care Services Ltd",
-      "lot_id": "fd78e4f23a",
-      "note": "Exits as per review on 28th October 2026",
-      "ref_price": null
-     }
-    ],
-    "published": [
-     {
-      "id": "28f684dc61",
-      "action": "entry",
-      "symbol": "PVRINOX.NS",
-      "name": "PVRINOX",
-      "lot_id": null,
-      "note": "New Entry",
-      "ref_price": 1445.3
-     },
-     {
-      "id": "feab3cb989",
-      "action": "entry",
-      "symbol": "ACUTAAS.NS",
-      "name": "ACUTAAS",
-      "lot_id": null,
-      "note": "New Entry",
-      "ref_price": 3710.0
-     },
-     {
-      "id": "880053ef3e",
-      "action": "entry",
-      "symbol": "SSWL.NS",
-      "name": "SSWL",
-      "lot_id": null,
-      "note": "New Entry",
-      "ref_price": 526.6
-     },
-     {
-      "id": "91378289bf",
-      "action": "exit",
-      "symbol": "DIACABS.NS",
-      "name": "Diamond Power Infrastructure Ltd",
-      "lot_id": "3896d97d2d",
-      "note": "Exits as per review on 28th October 2026",
-      "ref_price": null
-     },
-     {
-      "id": "1497c0d9d3",
-      "action": "exit",
-      "symbol": "INOXINDIA.NS",
-      "name": "INOX India Ltd",
-      "lot_id": "8cff512cd0",
-      "note": "Exits as per review on 28th October 2026",
-      "ref_price": null
-     },
-     {
-      "id": "1f782f7fb4",
-      "action": "exit",
-      "symbol": "YATHARTH.NS",
-      "name": "Yatharth Hospital & Trauma Care Services Ltd",
-      "lot_id": "fd78e4f23a",
-      "note": "Exits as per review on 28th October 2026",
-      "ref_price": null
-     }
-    ],
-    "published_at": "28 Oct 2026 15:53"
-   },
+   "plan": null,
    "last_execution": {
-    "date": "2026-10-15",
+    "date": "2026-10-29",
     "exits": [
      {
-      "symbol": "LUMAXTECH.NS",
-      "price": 1913.6,
-      "qty": 50.0,
-      "pnl_pct": -5.036970869932011
+      "symbol": "DIACABS.NS",
+      "price": 324.95,
+      "qty": 260.0,
+      "pnl_pct": -15.5974025974026
+     },
+     {
+      "symbol": "INOXINDIA.NS",
+      "price": 1893.1,
+      "qty": 47.0,
+      "pnl_pct": -10.104943254665477
+     },
+     {
+      "symbol": "YATHARTH.NS",
+      "price": 942.8,
+      "qty": 103.0,
+      "pnl_pct": -2.3308815912151615
      }
     ],
     "entries": [
      {
-      "symbol": "WSTCSTPAPR.NS",
-      "price": 868.8,
-      "qty": 115.0
+      "symbol": "PVRINOX.NS",
+      "price": 1483.7,
+      "qty": 67.0
+     },
+     {
+      "symbol": "ACUTAAS.NS",
+      "price": 3839.0,
+      "qty": 26.0
+     },
+     {
+      "symbol": "SSWL.NS",
+      "price": 514.35,
+      "qty": 195.0
      }
     ],
     "replaced": [],
     "skipped": [],
-    "sent_at": "15 Oct 2026 09:36"
+    "sent_at": null
    },
    "app_url": "https://alpha-mi20.streamlit.app/",
    "last_no_change": "07 Oct 2026 14:06"
@@ -203,8 +111,8 @@
    "entry_date": "2026-09-17",
    "entry_price": 385.0,
    "qty": 260.0,
-   "exit_date": null,
-   "exit_price": null,
+   "exit_date": "2026-10-29",
+   "exit_price": 324.95,
    "commission": 0.0,
    "manual_price": null,
    "comment": ""
@@ -245,8 +153,8 @@
    "entry_date": "2026-09-03",
    "entry_price": 965.3,
    "qty": 103.0,
-   "exit_date": null,
-   "exit_price": null,
+   "exit_date": "2026-10-29",
+   "exit_price": 942.8,
    "commission": 0.0,
    "manual_price": null,
    "comment": ""
@@ -273,8 +181,8 @@
    "entry_date": "2026-09-03",
    "entry_price": 2105.9,
    "qty": 47.0,
-   "exit_date": null,
-   "exit_price": null,
+   "exit_date": "2026-10-29",
+   "exit_price": 1893.1,
    "commission": 0.0,
    "manual_price": null,
    "comment": ""
@@ -1566,6 +1474,48 @@
    "commission": 0.0,
    "manual_price": null,
    "comment": null
+  },
+  {
+   "id": "7efb589a60",
+   "portfolio": "Mi20",
+   "symbol": "PVRINOX.NS",
+   "name": "PVRINOX",
+   "entry_date": "2026-10-29",
+   "entry_price": 1483.7,
+   "qty": 67.0,
+   "exit_date": null,
+   "exit_price": null,
+   "commission": 0.0,
+   "manual_price": null,
+   "comment": "Price @ 9.30am"
+  },
+  {
+   "id": "9d4d32cbb4",
+   "portfolio": "Mi20",
+   "symbol": "ACUTAAS.NS",
+   "name": "ACUTAAS",
+   "entry_date": "2026-10-29",
+   "entry_price": 3839.0,
+   "qty": 26.0,
+   "exit_date": null,
+   "exit_price": null,
+   "commission": 0.0,
+   "manual_price": null,
+   "comment": "Price @ 9.30am"
+  },
+  {
+   "id": "f689958c84",
+   "portfolio": "Mi20",
+   "symbol": "SSWL.NS",
+   "name": "SSWL",
+   "entry_date": "2026-10-29",
+   "entry_price": 514.35,
+   "qty": 195.0,
+   "exit_date": null,
+   "exit_price": null,
+   "commission": 0.0,
+   "manual_price": null,
+   "comment": "Price @ 9.30am"
   }
  ]
 }
