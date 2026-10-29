@@ -201,6 +201,8 @@ def kpis(cards):
         extra = card[5] if len(card) > 5 else ""          # extra card class, e.g. "bm pos"
         value = str(value)
         v_tone = "neg" if value.startswith(DOWN) else ("pos" if value.startswith(UP) else "")
+        if "bm" in extra.split():
+            v_tone = "pos" if "pos" in extra.split() else "neg"
         t = f' title="{html.escape(tip)}"' if tip else ""
         sub_html = f'<div class="kpi-s {tone or ""}">{html.escape(sub)}</div>' if sub else ""
         cells.append(f'<div class="kpi {extra}"{t}><div class="kpi-l">{html.escape(label)}{" ⓘ" if tip else ""}</div>'
@@ -413,12 +415,16 @@ with tabs[0]:
         if s["bench"]:
             st.markdown('<div class="bench-h">How we did vs the market (same period)</div>',
                         unsafe_allow_html=True)
+            def moved(v):
+                return "flat" if round(v, 2) == 0 else f"{'up' if v > 0 else 'down'} {abs(v):.2f}%"
+
             cards = []
+            mine = s["total_return_pct"]
             for k, v in s["bench"].items():
-                gap = s["total_return_pct"] - v
+                gap = mine - v
                 ahead = gap >= 0
-                cards.append((f"vs {k}", f"{UP if ahead else DOWN}{abs(gap):.2f} pts",
-                              f"{'Ahead' if ahead else 'Behind'} · {k} {pct(v)} · us {pct(s['total_return_pct'])}",
+                cards.append((f"{'Outperformance' if ahead else 'Underperformance'} vs {k}", f"{abs(gap):.2f}%",
+                              f"Portfolio {moved(mine)}, while {k} is {moved(v)} in the same period.",
                               "", None, "bm " + ("pos" if ahead else "neg")))
             kpis(cards)
 
