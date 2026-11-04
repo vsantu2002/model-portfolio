@@ -69,8 +69,63 @@
       "ref_price": 636.8
      }
     ],
-    "published": null,
-    "published_at": null
+    "published": [
+     {
+      "id": "466986514e",
+      "action": "exit",
+      "symbol": "CYIENTDLM.NS",
+      "name": "Cyient DLM Ltd",
+      "lot_id": "71b57d6969",
+      "note": null,
+      "ref_price": null
+     },
+     {
+      "id": "beee8662f3",
+      "action": "exit",
+      "symbol": "BLISSGVS.NS",
+      "name": "Bliss GVS Pharma Ltd",
+      "lot_id": "81bb920ec1",
+      "note": null,
+      "ref_price": null
+     },
+     {
+      "id": "81c6df654b",
+      "action": "exit",
+      "symbol": "MOREPENLAB.NS",
+      "name": "Morepen Laboratories Ltd",
+      "lot_id": "db1e6fc7b1",
+      "note": null,
+      "ref_price": null
+     },
+     {
+      "id": "8d203a42da",
+      "action": "entry",
+      "symbol": "IGIL.NS",
+      "name": "IGIL",
+      "lot_id": null,
+      "note": "International Gemological Institute",
+      "ref_price": 402.0
+     },
+     {
+      "id": "8ed27092b0",
+      "action": "entry",
+      "symbol": "TANLA.NS",
+      "name": "TANLA",
+      "lot_id": null,
+      "note": "Tanla Platforms",
+      "ref_price": 659.1
+     },
+     {
+      "id": "a6b587c42c",
+      "action": "entry",
+      "symbol": "SAREGAMA.NS",
+      "name": "SAREGAMA",
+      "lot_id": null,
+      "note": "Saregama",
+      "ref_price": 636.8
+     }
+    ],
+    "published_at": "04 Nov 2026 15:50"
    },
    "last_execution": {
     "date": "2026-10-29",
