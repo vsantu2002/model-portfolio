@@ -22,6 +22,24 @@
       "lot_id": "71b57d6969",
       "note": null,
       "ref_price": null
+     },
+     {
+      "id": "beee8662f3",
+      "action": "exit",
+      "symbol": "BLISSGVS.NS",
+      "name": "Bliss GVS Pharma Ltd",
+      "lot_id": "81bb920ec1",
+      "note": null,
+      "ref_price": null
+     },
+     {
+      "id": "81c6df654b",
+      "action": "exit",
+      "symbol": "MOREPENLAB.NS",
+      "name": "Morepen Laboratories Ltd",
+      "lot_id": "db1e6fc7b1",
+      "note": null,
+      "ref_price": null
      }
     ],
     "published": null,
