@@ -49,6 +49,15 @@
       "lot_id": null,
       "note": "International Gemological Institute",
       "ref_price": 402.0
+     },
+     {
+      "id": "8ed27092b0",
+      "action": "entry",
+      "symbol": "TANLA.NS",
+      "name": "TANLA",
+      "lot_id": null,
+      "note": "Tanla Platforms",
+      "ref_price": 659.1
      }
     ],
     "published": null,
