@@ -40,6 +40,15 @@
       "lot_id": "db1e6fc7b1",
       "note": null,
       "ref_price": null
+     },
+     {
+      "id": "8d203a42da",
+      "action": "entry",
+      "symbol": "IGIL.NS",
+      "name": "IGIL",
+      "lot_id": null,
+      "note": "International Gemological Institute",
+      "ref_price": 402.0
      }
     ],
     "published": null,
