@@ -58,6 +58,15 @@
       "lot_id": null,
       "note": "Tanla Platforms",
       "ref_price": 659.1
+     },
+     {
+      "id": "a6b587c42c",
+      "action": "entry",
+      "symbol": "SAREGAMA.NS",
+      "name": "SAREGAMA",
+      "lot_id": null,
+      "note": "Saregama",
+      "ref_price": 636.8
      }
     ],
     "published": null,
