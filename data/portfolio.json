@@ -12,163 +12,49 @@
    },
    "telegram_chat_id": -1002707776358,
    "telegram_chat_title": "10X Club in 10Y",
-   "plan": {
-    "items": [
-     {
-      "id": "466986514e",
-      "action": "exit",
-      "symbol": "CYIENTDLM.NS",
-      "name": "Cyient DLM Ltd",
-      "lot_id": "71b57d6969",
-      "note": null,
-      "ref_price": null
-     },
-     {
-      "id": "beee8662f3",
-      "action": "exit",
-      "symbol": "BLISSGVS.NS",
-      "name": "Bliss GVS Pharma Ltd",
-      "lot_id": "81bb920ec1",
-      "note": null,
-      "ref_price": null
-     },
-     {
-      "id": "81c6df654b",
-      "action": "exit",
-      "symbol": "MOREPENLAB.NS",
-      "name": "Morepen Laboratories Ltd",
-      "lot_id": "db1e6fc7b1",
-      "note": null,
-      "ref_price": null
-     },
-     {
-      "id": "8d203a42da",
-      "action": "entry",
-      "symbol": "IGIL.NS",
-      "name": "IGIL",
-      "lot_id": null,
-      "note": "International Gemological Institute",
-      "ref_price": 402.0
-     },
-     {
-      "id": "8ed27092b0",
-      "action": "entry",
-      "symbol": "TANLA.NS",
-      "name": "TANLA",
-      "lot_id": null,
-      "note": "Tanla Platforms",
-      "ref_price": 659.1
-     },
-     {
-      "id": "a6b587c42c",
-      "action": "entry",
-      "symbol": "SAREGAMA.NS",
-      "name": "SAREGAMA",
-      "lot_id": null,
-      "note": "Saregama",
-      "ref_price": 636.8
-     }
-    ],
-    "published": [
-     {
-      "id": "466986514e",
-      "action": "exit",
-      "symbol": "CYIENTDLM.NS",
-      "name": "Cyient DLM Ltd",
-      "lot_id": "71b57d6969",
-      "note": null,
-      "ref_price": null
-     },
-     {
-      "id": "beee8662f3",
-      "action": "exit",
-      "symbol": "BLISSGVS.NS",
-      "name": "Bliss GVS Pharma Ltd",
-      "lot_id": "81bb920ec1",
-      "note": null,
-      "ref_price": null
-     },
-     {
-      "id": "81c6df654b",
-      "action": "exit",
-      "symbol": "MOREPENLAB.NS",
-      "name": "Morepen Laboratories Ltd",
-      "lot_id": "db1e6fc7b1",
-      "note": null,
-      "ref_price": null
-     },
-     {
-      "id": "8d203a42da",
-      "action": "entry",
-      "symbol": "IGIL.NS",
-      "name": "IGIL",
-      "lot_id": null,
-      "note": "International Gemological Institute",
-      "ref_price": 402.0
-     },
-     {
-      "id": "8ed27092b0",
-      "action": "entry",
-      "symbol": "TANLA.NS",
-      "name": "TANLA",
-      "lot_id": null,
-      "note": "Tanla Platforms",
-      "ref_price": 659.1
-     },
-     {
-      "id": "a6b587c42c",
-      "action": "entry",
-      "symbol": "SAREGAMA.NS",
-      "name": "SAREGAMA",
-      "lot_id": null,
-      "note": "Saregama",
-      "ref_price": 636.8
-     }
-    ],
-    "published_at": "04 Nov 2026 15:50"
-   },
+   "plan": null,
    "last_execution": {
-    "date": "2026-10-29",
+    "date": "2026-11-05",
     "exits": [
      {
-      "symbol": "DIACABS.NS",
-      "price": 324.95,
-      "qty": 260.0,
-      "pnl_pct": -15.5974025974026
+      "symbol": "CYIENTDLM.NS",
+      "price": 763.0,
+      "qty": 105.0,
+      "pnl_pct": -19.476544773362882
      },
      {
-      "symbol": "INOXINDIA.NS",
-      "price": 1893.1,
-      "qty": 47.0,
-      "pnl_pct": -10.104943254665477
+      "symbol": "BLISSGVS.NS",
+      "price": 640.0,
+      "qty": 173.0,
+      "pnl_pct": 10.335315921041289
      },
      {
-      "symbol": "YATHARTH.NS",
-      "price": 942.8,
-      "qty": 103.0,
-      "pnl_pct": -2.3308815912151615
+      "symbol": "MOREPENLAB.NS",
+      "price": 100.8,
+      "qty": 1016.0,
+      "pnl_pct": 2.0552799433026125
      }
     ],
     "entries": [
      {
-      "symbol": "PVRINOX.NS",
-      "price": 1483.7,
-      "qty": 67.0
+      "symbol": "IGIL.NS",
+      "price": 413.75,
+      "qty": 242.0
      },
      {
-      "symbol": "ACUTAAS.NS",
-      "price": 3839.0,
-      "qty": 26.0
+      "symbol": "TANLA.NS",
+      "price": 673.75,
+      "qty": 148.0
      },
      {
-      "symbol": "SSWL.NS",
-      "price": 514.35,
-      "qty": 195.0
+      "symbol": "SAREGAMA.NS",
+      "price": 651.55,
+      "qty": 154.0
      }
     ],
     "replaced": [],
     "skipped": [],
-    "sent_at": "29 Oct 2026 09:36"
+    "sent_at": null
    },
    "app_url": "https://alpha-mi20.streamlit.app/",
    "last_no_change": "07 Oct 2026 14:06"
@@ -239,8 +125,8 @@
    "entry_date": "2026-09-10",
    "entry_price": 947.55,
    "qty": 105.0,
-   "exit_date": null,
-   "exit_price": null,
+   "exit_date": "2026-11-05",
+   "exit_price": 763.0,
    "commission": 0.0,
    "manual_price": null,
    "comment": ""
@@ -337,8 +223,8 @@
    "entry_date": "2026-08-27",
    "entry_price": 98.77,
    "qty": 1016.0,
-   "exit_date": null,
-   "exit_price": null,
+   "exit_date": "2026-11-05",
+   "exit_price": 100.8,
    "commission": 0.0,
    "manual_price": null,
    "comment": ""
@@ -421,8 +307,8 @@
    "entry_date": "2026-08-20",
    "entry_price": 580.05,
    "qty": 173.0,
-   "exit_date": null,
-   "exit_price": null,
+   "exit_date": "2026-11-05",
+   "exit_price": 640.0,
    "commission": 0.0,
    "manual_price": null,
    "comment": ""
@@ -1630,6 +1516,48 @@
    "commission": 0.0,
    "manual_price": null,
    "comment": "Price @ 9.30am"
+  },
+  {
+   "id": "b6561ff4c6",
+   "portfolio": "Mi20",
+   "symbol": "IGIL.NS",
+   "name": "IGIL",
+   "entry_date": "2026-11-05",
+   "entry_price": 413.75,
+   "qty": 242.0,
+   "exit_date": null,
+   "exit_price": null,
+   "commission": 0.0,
+   "manual_price": null,
+   "comment": null
+  },
+  {
+   "id": "9fe9a38959",
+   "portfolio": "Mi20",
+   "symbol": "TANLA.NS",
+   "name": "TANLA",
+   "entry_date": "2026-11-05",
+   "entry_price": 673.75,
+   "qty": 148.0,
+   "exit_date": null,
+   "exit_price": null,
+   "commission": 0.0,
+   "manual_price": null,
+   "comment": null
+  },
+  {
+   "id": "195cbddc42",
+   "portfolio": "Mi20",
+   "symbol": "SAREGAMA.NS",
+   "name": "SAREGAMA",
+   "entry_date": "2026-11-05",
+   "entry_price": 651.55,
+   "qty": 154.0,
+   "exit_date": null,
+   "exit_price": null,
+   "commission": 0.0,
+   "manual_price": null,
+   "comment": null
   }
  ]
 }
