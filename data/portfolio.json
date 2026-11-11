@@ -76,6 +76,15 @@
       "lot_id": "1b250e91a2",
       "note": null,
       "ref_price": null
+     },
+     {
+      "id": "b12ddbd1f8",
+      "action": "entry",
+      "symbol": "APLLTD.NS",
+      "name": "APLLTD",
+      "lot_id": null,
+      "note": null,
+      "ref_price": 1029.3
      }
     ],
     "published": null,
