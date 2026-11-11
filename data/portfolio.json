@@ -40,6 +40,42 @@
       "lot_id": null,
       "note": null,
       "ref_price": 314.55
+     },
+     {
+      "id": "e4b677dd58",
+      "action": "exit",
+      "symbol": "SETL.NS",
+      "name": "Standard Engineering Technology Ltd",
+      "lot_id": "fd17bc4a49",
+      "note": null,
+      "ref_price": null
+     },
+     {
+      "id": "71000ddb53",
+      "action": "exit",
+      "symbol": "STLTECH.NS",
+      "name": "Sterlite Technologies Ltd",
+      "lot_id": "e5c33235cc",
+      "note": null,
+      "ref_price": null
+     },
+     {
+      "id": "69ce305bc5",
+      "action": "exit",
+      "symbol": "WSTCSTPAPR.NS",
+      "name": "WSTCSTPAPR",
+      "lot_id": "83b58699a5",
+      "note": null,
+      "ref_price": null
+     },
+     {
+      "id": "c2ab90ce56",
+      "action": "exit",
+      "symbol": "WELCORP.NS",
+      "name": "Welspun Corp Ltd",
+      "lot_id": "1b250e91a2",
+      "note": null,
+      "ref_price": null
      }
     ],
     "published": null,
