@@ -22,6 +22,15 @@
       "lot_id": null,
       "note": null,
       "ref_price": 208.77
+     },
+     {
+      "id": "48aa75ed9d",
+      "action": "entry",
+      "symbol": "INDHOTEL.NS",
+      "name": "INDHOTEL",
+      "lot_id": null,
+      "note": null,
+      "ref_price": 867.9
      }
     ],
     "published": null,
