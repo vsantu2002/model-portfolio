@@ -12,7 +12,21 @@
    },
    "telegram_chat_id": -1002707776358,
    "telegram_chat_title": "10X Club in 10Y",
-   "plan": null,
+   "plan": {
+    "items": [
+     {
+      "id": "5af8bfe6cc",
+      "action": "entry",
+      "symbol": "ROLEXRINGS.NS",
+      "name": "ROLEXRINGS",
+      "lot_id": null,
+      "note": null,
+      "ref_price": 208.77
+     }
+    ],
+    "published": null,
+    "published_at": null
+   },
    "last_execution": {
     "date": "2026-11-05",
     "exits": [
