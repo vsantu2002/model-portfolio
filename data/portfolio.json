@@ -31,6 +31,15 @@
       "lot_id": null,
       "note": null,
       "ref_price": 867.9
+     },
+     {
+      "id": "8f87d54ee1",
+      "action": "entry",
+      "symbol": "PRINCEPIPE.NS",
+      "name": "PRINCEPIPE",
+      "lot_id": null,
+      "note": null,
+      "ref_price": 314.55
      }
     ],
     "published": null,
