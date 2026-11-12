@@ -12,199 +12,60 @@
    },
    "telegram_chat_id": -1002707776358,
    "telegram_chat_title": "10X Club in 10Y",
-   "plan": {
-    "items": [
-     {
-      "id": "5af8bfe6cc",
-      "action": "entry",
-      "symbol": "ROLEXRINGS.NS",
-      "name": "ROLEXRINGS",
-      "lot_id": null,
-      "note": null,
-      "ref_price": 208.77
-     },
-     {
-      "id": "48aa75ed9d",
-      "action": "entry",
-      "symbol": "INDHOTEL.NS",
-      "name": "INDHOTEL",
-      "lot_id": null,
-      "note": null,
-      "ref_price": 867.9
-     },
-     {
-      "id": "8f87d54ee1",
-      "action": "entry",
-      "symbol": "PRINCEPIPE.NS",
-      "name": "PRINCEPIPE",
-      "lot_id": null,
-      "note": null,
-      "ref_price": 314.55
-     },
-     {
-      "id": "e4b677dd58",
-      "action": "exit",
-      "symbol": "SETL.NS",
-      "name": "Standard Engineering Technology Ltd",
-      "lot_id": "fd17bc4a49",
-      "note": null,
-      "ref_price": null
-     },
-     {
-      "id": "71000ddb53",
-      "action": "exit",
-      "symbol": "STLTECH.NS",
-      "name": "Sterlite Technologies Ltd",
-      "lot_id": "e5c33235cc",
-      "note": null,
-      "ref_price": null
-     },
-     {
-      "id": "69ce305bc5",
-      "action": "exit",
-      "symbol": "WSTCSTPAPR.NS",
-      "name": "WSTCSTPAPR",
-      "lot_id": "83b58699a5",
-      "note": null,
-      "ref_price": null
-     },
-     {
-      "id": "c2ab90ce56",
-      "action": "exit",
-      "symbol": "WELCORP.NS",
-      "name": "Welspun Corp Ltd",
-      "lot_id": "1b250e91a2",
-      "note": null,
-      "ref_price": null
-     },
-     {
-      "id": "b12ddbd1f8",
-      "action": "entry",
-      "symbol": "APLLTD.NS",
-      "name": "APLLTD",
-      "lot_id": null,
-      "note": null,
-      "ref_price": 1029.3
-     }
-    ],
-    "published": [
-     {
-      "id": "5af8bfe6cc",
-      "action": "entry",
-      "symbol": "ROLEXRINGS.NS",
-      "name": "ROLEXRINGS",
-      "lot_id": null,
-      "note": null,
-      "ref_price": 208.77
-     },
-     {
-      "id": "48aa75ed9d",
-      "action": "entry",
-      "symbol": "INDHOTEL.NS",
-      "name": "INDHOTEL",
-      "lot_id": null,
-      "note": null,
-      "ref_price": 867.9
-     },
-     {
-      "id": "8f87d54ee1",
-      "action": "entry",
-      "symbol": "PRINCEPIPE.NS",
-      "name": "PRINCEPIPE",
-      "lot_id": null,
-      "note": null,
-      "ref_price": 314.55
-     },
-     {
-      "id": "e4b677dd58",
-      "action": "exit",
-      "symbol": "SETL.NS",
-      "name": "Standard Engineering Technology Ltd",
-      "lot_id": "fd17bc4a49",
-      "note": null,
-      "ref_price": null
-     },
-     {
-      "id": "71000ddb53",
-      "action": "exit",
-      "symbol": "STLTECH.NS",
-      "name": "Sterlite Technologies Ltd",
-      "lot_id": "e5c33235cc",
-      "note": null,
-      "ref_price": null
-     },
-     {
-      "id": "69ce305bc5",
-      "action": "exit",
-      "symbol": "WSTCSTPAPR.NS",
-      "name": "WSTCSTPAPR",
-      "lot_id": "83b58699a5",
-      "note": null,
-      "ref_price": null
-     },
-     {
-      "id": "c2ab90ce56",
-      "action": "exit",
-      "symbol": "WELCORP.NS",
-      "name": "Welspun Corp Ltd",
-      "lot_id": "1b250e91a2",
-      "note": null,
-      "ref_price": null
-     },
-     {
-      "id": "b12ddbd1f8",
-      "action": "entry",
-      "symbol": "APLLTD.NS",
-      "name": "APLLTD",
-      "lot_id": null,
-      "note": null,
-      "ref_price": 1029.3
-     }
-    ],
-    "published_at": "11 Nov 2026 15:13"
-   },
+   "plan": null,
    "last_execution": {
-    "date": "2026-11-05",
+    "date": "2026-11-12",
     "exits": [
      {
-      "symbol": "CYIENTDLM.NS",
-      "price": 763.0,
-      "qty": 105.0,
-      "pnl_pct": -19.476544773362882
+      "symbol": "SETL.NS",
+      "price": 340.75,
+      "qty": 265.0,
+      "pnl_pct": -10.021124900977018
      },
      {
-      "symbol": "BLISSGVS.NS",
-      "price": 640.0,
-      "qty": 173.0,
-      "pnl_pct": 10.335315921041289
+      "symbol": "STLTECH.NS",
+      "price": 739.65,
+      "qty": 115.0,
+      "pnl_pct": -15.177752293577985
      },
      {
-      "symbol": "MOREPENLAB.NS",
-      "price": 100.8,
-      "qty": 1016.0,
-      "pnl_pct": 2.0552799433026125
+      "symbol": "WSTCSTPAPR.NS",
+      "price": 721.05,
+      "qty": 115.0,
+      "pnl_pct": -17.006215469613263
+     },
+     {
+      "symbol": "WELCORP.NS",
+      "price": 2231.6,
+      "qty": 38.0,
+      "pnl_pct": -14.847178234822756
      }
     ],
     "entries": [
      {
-      "symbol": "IGIL.NS",
-      "price": 413.75,
-      "qty": 242.0
+      "symbol": "ROLEXRINGS.NS",
+      "price": 213.85,
+      "qty": 468.0
      },
      {
-      "symbol": "TANLA.NS",
-      "price": 673.75,
-      "qty": 148.0
+      "symbol": "INDHOTEL.NS",
+      "price": 876.3,
+      "qty": 114.0
      },
      {
-      "symbol": "SAREGAMA.NS",
-      "price": 651.55,
-      "qty": 154.0
+      "symbol": "PRINCEPIPE.NS",
+      "price": 316.9,
+      "qty": 316.0
+     },
+     {
+      "symbol": "APLLTD.NS",
+      "price": 1042.5,
+      "qty": 96.0
      }
     ],
     "replaced": [],
     "skipped": [],
-    "sent_at": "05 Nov 2026 12:41"
+    "sent_at": null
    },
    "app_url": "https://alpha-mi20.streamlit.app/",
    "last_no_change": "07 Oct 2026 14:06"
@@ -289,8 +150,8 @@
    "entry_date": "2026-09-09",
    "entry_price": 872.0,
    "qty": 115.0,
-   "exit_date": null,
-   "exit_price": null,
+   "exit_date": "2026-11-12",
+   "exit_price": 739.65,
    "commission": 0.0,
    "manual_price": null,
    "comment": ""
@@ -345,8 +206,8 @@
    "entry_date": "2026-09-03",
    "entry_price": 2620.7,
    "qty": 38.0,
-   "exit_date": null,
-   "exit_price": null,
+   "exit_date": "2026-11-12",
+   "exit_price": 2231.6,
    "commission": 0.0,
    "manual_price": null,
    "comment": ""
@@ -359,8 +220,8 @@
    "entry_date": "2026-09-03",
    "entry_price": 378.7,
    "qty": 265.0,
-   "exit_date": null,
-   "exit_price": null,
+   "exit_date": "2026-11-12",
+   "exit_price": 340.75,
    "commission": 0.0,
    "manual_price": null,
    "comment": ""
@@ -1619,8 +1480,8 @@
    "entry_date": "2026-10-15",
    "entry_price": 868.8,
    "qty": 115.0,
-   "exit_date": null,
-   "exit_price": null,
+   "exit_date": "2026-11-12",
+   "exit_price": 721.05,
    "commission": 0.0,
    "manual_price": null,
    "comment": null
@@ -1703,6 +1564,62 @@
    "entry_date": "2026-11-05",
    "entry_price": 651.55,
    "qty": 154.0,
+   "exit_date": null,
+   "exit_price": null,
+   "commission": 0.0,
+   "manual_price": null,
+   "comment": null
+  },
+  {
+   "id": "503787c836",
+   "portfolio": "Mi20",
+   "symbol": "ROLEXRINGS.NS",
+   "name": "ROLEXRINGS",
+   "entry_date": "2026-11-12",
+   "entry_price": 213.85,
+   "qty": 468.0,
+   "exit_date": null,
+   "exit_price": null,
+   "commission": 0.0,
+   "manual_price": null,
+   "comment": null
+  },
+  {
+   "id": "0c83787382",
+   "portfolio": "Mi20",
+   "symbol": "INDHOTEL.NS",
+   "name": "INDHOTEL",
+   "entry_date": "2026-11-12",
+   "entry_price": 876.3,
+   "qty": 114.0,
+   "exit_date": null,
+   "exit_price": null,
+   "commission": 0.0,
+   "manual_price": null,
+   "comment": null
+  },
+  {
+   "id": "4e2a2185b9",
+   "portfolio": "Mi20",
+   "symbol": "PRINCEPIPE.NS",
+   "name": "PRINCEPIPE",
+   "entry_date": "2026-11-12",
+   "entry_price": 316.9,
+   "qty": 316.0,
+   "exit_date": null,
+   "exit_price": null,
+   "commission": 0.0,
+   "manual_price": null,
+   "comment": null
+  },
+  {
+   "id": "1440899d4b",
+   "portfolio": "Mi20",
+   "symbol": "APLLTD.NS",
+   "name": "APLLTD",
+   "entry_date": "2026-11-12",
+   "entry_price": 1042.5,
+   "qty": 96.0,
    "exit_date": null,
    "exit_price": null,
    "commission": 0.0,
