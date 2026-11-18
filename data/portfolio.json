@@ -51,8 +51,45 @@
       "ref_price": null
      }
     ],
-    "published": null,
-    "published_at": null
+    "published": [
+     {
+      "id": "cff95c2163",
+      "action": "entry",
+      "symbol": "EMCURE.NS",
+      "name": "EMCURE",
+      "lot_id": null,
+      "note": null,
+      "ref_price": 2334.8
+     },
+     {
+      "id": "02543ea0ae",
+      "action": "entry",
+      "symbol": "ASAHIINDIA.NS",
+      "name": "ASAHIINDIA",
+      "lot_id": null,
+      "note": null,
+      "ref_price": 1157.3
+     },
+     {
+      "id": "d29a677256",
+      "action": "exit",
+      "symbol": "INDSWFTLAB.NS",
+      "name": "Ind-Swift Laboratories Ltd",
+      "lot_id": "193219c985",
+      "note": null,
+      "ref_price": null
+     },
+     {
+      "id": "04185e1494",
+      "action": "exit",
+      "symbol": "SBCL.NS",
+      "name": "Shivalik Bimetal Controls Ltd",
+      "lot_id": "34ab4ae5b6",
+      "note": null,
+      "ref_price": null
+     }
+    ],
+    "published_at": "18 Nov 2026 15:58"
    },
    "last_execution": {
     "date": "2026-11-12",
