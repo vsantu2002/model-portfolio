@@ -31,6 +31,24 @@
       "lot_id": null,
       "note": null,
       "ref_price": 1157.3
+     },
+     {
+      "id": "d29a677256",
+      "action": "exit",
+      "symbol": "INDSWFTLAB.NS",
+      "name": "Ind-Swift Laboratories Ltd",
+      "lot_id": "193219c985",
+      "note": null,
+      "ref_price": null
+     },
+     {
+      "id": "04185e1494",
+      "action": "exit",
+      "symbol": "SBCL.NS",
+      "name": "Shivalik Bimetal Controls Ltd",
+      "lot_id": "34ab4ae5b6",
+      "note": null,
+      "ref_price": null
      }
     ],
     "published": null,
