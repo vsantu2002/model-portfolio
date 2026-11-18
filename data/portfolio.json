@@ -22,6 +22,15 @@
       "lot_id": null,
       "note": null,
       "ref_price": 2334.8
+     },
+     {
+      "id": "02543ea0ae",
+      "action": "entry",
+      "symbol": "ASAHIINDIA.NS",
+      "name": "ASAHIINDIA",
+      "lot_id": null,
+      "note": null,
+      "ref_price": 1157.3
      }
     ],
     "published": null,
