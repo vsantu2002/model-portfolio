@@ -12,138 +12,38 @@
    },
    "telegram_chat_id": -1002707776358,
    "telegram_chat_title": "10X Club in 10Y",
-   "plan": {
-    "items": [
-     {
-      "id": "cff95c2163",
-      "action": "entry",
-      "symbol": "EMCURE.NS",
-      "name": "EMCURE",
-      "lot_id": null,
-      "note": null,
-      "ref_price": 2334.8
-     },
-     {
-      "id": "02543ea0ae",
-      "action": "entry",
-      "symbol": "ASAHIINDIA.NS",
-      "name": "ASAHIINDIA",
-      "lot_id": null,
-      "note": null,
-      "ref_price": 1157.3
-     },
-     {
-      "id": "d29a677256",
-      "action": "exit",
-      "symbol": "INDSWFTLAB.NS",
-      "name": "Ind-Swift Laboratories Ltd",
-      "lot_id": "193219c985",
-      "note": null,
-      "ref_price": null
-     },
-     {
-      "id": "04185e1494",
-      "action": "exit",
-      "symbol": "SBCL.NS",
-      "name": "Shivalik Bimetal Controls Ltd",
-      "lot_id": "34ab4ae5b6",
-      "note": null,
-      "ref_price": null
-     }
-    ],
-    "published": [
-     {
-      "id": "cff95c2163",
-      "action": "entry",
-      "symbol": "EMCURE.NS",
-      "name": "EMCURE",
-      "lot_id": null,
-      "note": null,
-      "ref_price": 2334.8
-     },
-     {
-      "id": "02543ea0ae",
-      "action": "entry",
-      "symbol": "ASAHIINDIA.NS",
-      "name": "ASAHIINDIA",
-      "lot_id": null,
-      "note": null,
-      "ref_price": 1157.3
-     },
-     {
-      "id": "d29a677256",
-      "action": "exit",
-      "symbol": "INDSWFTLAB.NS",
-      "name": "Ind-Swift Laboratories Ltd",
-      "lot_id": "193219c985",
-      "note": null,
-      "ref_price": null
-     },
-     {
-      "id": "04185e1494",
-      "action": "exit",
-      "symbol": "SBCL.NS",
-      "name": "Shivalik Bimetal Controls Ltd",
-      "lot_id": "34ab4ae5b6",
-      "note": null,
-      "ref_price": null
-     }
-    ],
-    "published_at": "18 Nov 2026 15:58"
-   },
+   "plan": null,
    "last_execution": {
-    "date": "2026-11-12",
+    "date": "2026-11-19",
     "exits": [
      {
-      "symbol": "SETL.NS",
-      "price": 340.75,
-      "qty": 265.0,
-      "pnl_pct": -10.021124900977018
+      "symbol": "INDSWFTLAB.NS",
+      "price": 329.5,
+      "qty": 302.0,
+      "pnl_pct": -0.302571860816947
      },
      {
-      "symbol": "STLTECH.NS",
-      "price": 739.65,
-      "qty": 115.0,
-      "pnl_pct": -15.177752293577985
-     },
-     {
-      "symbol": "WSTCSTPAPR.NS",
-      "price": 721.05,
-      "qty": 115.0,
-      "pnl_pct": -17.006215469613263
-     },
-     {
-      "symbol": "WELCORP.NS",
-      "price": 2231.6,
-      "qty": 38.0,
-      "pnl_pct": -14.847178234822756
+      "symbol": "SBCL.NS",
+      "price": 955.2,
+      "qty": 97.0,
+      "pnl_pct": -7.656612529002327
      }
     ],
     "entries": [
      {
-      "symbol": "ROLEXRINGS.NS",
-      "price": 213.85,
-      "qty": 468.0
+      "symbol": "EMCURE.NS",
+      "price": 2325.4,
+      "qty": 43.0
      },
      {
-      "symbol": "INDHOTEL.NS",
-      "price": 876.3,
-      "qty": 114.0
-     },
-     {
-      "symbol": "PRINCEPIPE.NS",
-      "price": 316.9,
-      "qty": 316.0
-     },
-     {
-      "symbol": "APLLTD.NS",
-      "price": 1042.5,
-      "qty": 96.0
+      "symbol": "ASAHIINDIA.NS",
+      "price": 1167.0,
+      "qty": 86.0
      }
     ],
     "replaced": [],
     "skipped": [],
-    "sent_at": "12 Nov 2026 09:44"
+    "sent_at": null
    },
    "app_url": "https://alpha-mi20.streamlit.app/",
    "last_no_change": "07 Oct 2026 14:06"
@@ -354,8 +254,8 @@
    "entry_date": "2026-08-20",
    "entry_price": 330.5,
    "qty": 302.0,
-   "exit_date": null,
-   "exit_price": null,
+   "exit_date": "2026-11-19",
+   "exit_price": 329.5,
    "commission": 0.0,
    "manual_price": null,
    "comment": ""
@@ -452,8 +352,8 @@
    "entry_date": "2026-08-13",
    "entry_price": 1034.4,
    "qty": 97.0,
-   "exit_date": null,
-   "exit_price": null,
+   "exit_date": "2026-11-19",
+   "exit_price": 955.2,
    "commission": 0.0,
    "manual_price": null,
    "comment": ""
@@ -1698,6 +1598,34 @@
    "entry_date": "2026-11-12",
    "entry_price": 1042.5,
    "qty": 96.0,
+   "exit_date": null,
+   "exit_price": null,
+   "commission": 0.0,
+   "manual_price": null,
+   "comment": null
+  },
+  {
+   "id": "0f5101caef",
+   "portfolio": "Mi20",
+   "symbol": "EMCURE.NS",
+   "name": "EMCURE",
+   "entry_date": "2026-11-19",
+   "entry_price": 2325.4,
+   "qty": 43.0,
+   "exit_date": null,
+   "exit_price": null,
+   "commission": 0.0,
+   "manual_price": null,
+   "comment": null
+  },
+  {
+   "id": "30b55460b1",
+   "portfolio": "Mi20",
+   "symbol": "ASAHIINDIA.NS",
+   "name": "ASAHIINDIA",
+   "entry_date": "2026-11-19",
+   "entry_price": 1167.0,
+   "qty": 86.0,
    "exit_date": null,
    "exit_price": null,
    "commission": 0.0,
