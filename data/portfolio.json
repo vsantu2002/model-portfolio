@@ -61,6 +61,17 @@
    "telegram_chat_id": -1002707776358,
    "telegram_chat_title": "10X Club in 10Y",
    "app_url": "https://alpha-mi20.streamlit.app/"
+  },
+  "US20Momentum": {
+   "name": "US20 Momentum",
+   "currency": "USD",
+   "capital": 100000.0,
+   "slots": 20,
+   "benchmarks": {
+    "S&P 500": "^GSPC",
+    "Nasdaq 100": "^NDX",
+    "Russell 2000": "^RUT"
+   }
   }
  },
  "lots": [
