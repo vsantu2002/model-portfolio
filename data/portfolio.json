@@ -71,7 +71,8 @@
     "S&P 500": "^GSPC",
     "Nasdaq 100": "^NDX",
     "Russell 2000": "^RUT"
-   }
+   },
+   "app_url": "https://alpha-mi20.streamlit.app/"
   }
  },
  "lots": [
